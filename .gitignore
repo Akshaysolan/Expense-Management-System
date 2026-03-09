@@ -1,8 +1,8 @@
-# =========================
+
 
 # Python / Django
 
-# =========================
+
 
 **pycache**/
 *.pyc
@@ -26,22 +26,22 @@ ENV/
 local_settings.py
 media/
 
-# =========================
+
 
 # Environment Variables
 
-# =========================
+
 
 .env
 .env.local
 .env.development
 .env.production
 
-# =========================
+
 
 # Node / React
 
-# =========================
+
 
 node_modules/
 npm-debug.log*
@@ -53,52 +53,57 @@ yarn-error.log*
 frontend/build/
 frontend/.cache/
 
-# =========================
+
 
 # OS Files
 
-# =========================
+
 
 .DS_Store
 Thumbs.db
 
-# =========================
+
 
 # IDE / Editor
 
-# =========================
+
 
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# =========================
+
 
 # Coverage / Testing
 
-# =========================
+
 
 coverage/
 htmlcov/
 .tox/
 .pytest_cache/
 
-# =========================
+
 
 # Distribution
 
-# =========================
+
 
 build/
 dist/
 *.egg-info/
 
-# =========================
+
 
 # Misc
 
-# =========================
+
 
 *.bak
 *.tmp
+
+
+
+
+

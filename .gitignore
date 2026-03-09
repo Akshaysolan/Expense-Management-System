@@ -1,109 +1,45 @@
-
-
-# Python / Django
-
-
+# Python
 
 **pycache**/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 *.sqlite3
 db.sqlite3
-*.log
 
-# Virtual Environment
+# Virtual environment
 
 venv/
 env/
-ENV/
 .venv/
 
-# Django
-
-*.pot
-*.pyc
-local_settings.py
-media/
-
-
-
-# Environment Variables
-
-
+# Environment variables
 
 .env
-.env.local
-.env.development
-.env.production
 
+# Django media
 
+media/
 
-# Node / React
-
-
+# Node
 
 node_modules/
+
+# React build
+
+build/
+frontend/build/
+
+# Logs
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# React build files
-
-frontend/build/
-frontend/.cache/
-
-
-
-# OS Files
-
-
-
-.DS_Store
-Thumbs.db
-
-
-
-# IDE / Editor
-
-
+# IDE
 
 .vscode/
 .idea/
-*.swp
-*.swo
 
+# OS
 
-
-# Coverage / Testing
-
-
-
-coverage/
-htmlcov/
-.tox/
-.pytest_cache/
-
-
-
-# Distribution
-
-
-
-build/
-dist/
-*.egg-info/
-
-
-
-# Misc
-
-
-
-*.bak
-*.tmp
-
-
-
-
-
+.DS_Store
+Thumbs.db

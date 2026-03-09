@@ -5,7 +5,8 @@ import './App.css';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import Sidebar from './components/Sidebar';
-import Dashboard from './pages/Dashboard';
+import Header from './components/Header';
+import Dashboard from './components/Dashboard';
 import ExpensesPage from './pages/ExpensesPage';
 import TripsPage from './pages/TripsPage';
 import ApprovalsPage from './pages/ApprovalsPage';
@@ -28,11 +29,33 @@ function App() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setMobileSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   const fetchDashboardData = async () => {
     try {
@@ -69,6 +92,22 @@ function App() {
     }
   };
 
+  const toggleSidebar = () => {
+    if (isMobile) {
+      setMobileSidebarOpen(!mobileSidebarOpen);
+    } else {
+      setSidebarCollapsed(!sidebarCollapsed);
+    }
+  };
+
+  const closeMobileSidebar = () => {
+    if (isMobile) {
+      setMobileSidebarOpen(false);
+    }
+  };
+
+  const isSidebarCollapsed = isMobile ? !mobileSidebarOpen : sidebarCollapsed;
+
   if (loading && !dashboardData.expenses.length) {
     return (
       <div className="loading-container">
@@ -96,28 +135,35 @@ function App() {
         <Router>
           <div className="app">
             <Sidebar 
-              collapsed={sidebarCollapsed} 
-              toggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+              isCollapsed={isSidebarCollapsed}
+              toggleSidebar={toggleSidebar}
+              isMobile={isMobile}
+              closeMobileSidebar={closeMobileSidebar}
             />
-            <main className={`main-content ${sidebarCollapsed ? 'expanded' : ''}`}>
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={
-                  <Dashboard 
-                    data={dashboardData} 
-                    onPDFUpload={handlePDFUpload}
-                  />
-                } />
-                <Route path="/expenses" element={
-                  <ExpensesPage 
-                    expenses={dashboardData.expenses}
-                  />
-                } />
-                <Route path="/trips" element={<TripsPage />} />
-                <Route path="/approvals" element={<ApprovalsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/support" element={<SupportPage />} />
-              </Routes>
+            
+            <main className={`main-content ${!isSidebarCollapsed && !isMobile ? 'sidebar-expanded' : 'sidebar-collapsed'}`}>
+              <Header toggleMobileSidebar={toggleSidebar} />
+              
+              <div className="content-wrapper">
+                <Routes>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={
+                    <Dashboard 
+                      data={dashboardData} 
+                      onPDFUpload={handlePDFUpload}
+                    />
+                  } />
+                  <Route path="/expenses" element={
+                    <ExpensesPage 
+                      expenses={dashboardData.expenses}
+                    />
+                  } />
+                  <Route path="/trips" element={<TripsPage />} />
+                  <Route path="/approvals" element={<ApprovalsPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/support" element={<SupportPage />} />
+                </Routes>
+              </div>
             </main>
           </div>
         </Router>

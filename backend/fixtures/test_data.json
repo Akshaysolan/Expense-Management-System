@@ -1,0 +1,252 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "username": "admin@expensepro.in",
+      "password": "pbkdf2_sha256$600000$wK6nX$W7qXyZ8mR3tL2pN4vB5cX6yZ8aR3tL2pN4vB5cX6yZ8=",
+      "email": "admin@expensepro.in",
+      "first_name": "Rajesh",
+      "last_name": "Kumar",
+      "is_active": true,
+      "is_staff": true,
+      "is_superuser": true
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+      "username": "priya.sharma@company.in",
+      "password": "pbkdf2_sha256$600000$wK6nX$W7qXyZ8mR3tL2pN4vB5cX6yZ8aR3tL2pN4vB5cX6yZ8=",
+      "email": "priya.sharma@company.in",
+      "first_name": "Priya",
+      "last_name": "Sharma",
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 3,
+    "fields": {
+      "username": "amit.patel@company.in",
+      "password": "pbkdf2_sha256$600000$wK6nX$W7qXyZ8mR3tL2pN4vB5cX6yZ8aR3tL2pN4vB5cX6yZ8=",
+      "email": "amit.patel@company.in",
+      "first_name": "Amit",
+      "last_name": "Patel",
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 4,
+    "fields": {
+      "username": "neha.gupta@company.in",
+      "password": "pbkdf2_sha256$600000$wK6nX$W7qXyZ8mR3tL2pN4vB5cX6yZ8aR3tL2pN4vB5cX6yZ8=",
+      "email": "neha.gupta@company.in",
+      "first_name": "Neha",
+      "last_name": "Gupta",
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 5,
+    "fields": {
+      "username": "vikram.singh@company.in",
+      "password": "pbkdf2_sha256$600000$wK6nX$W7qXyZ8mR3tL2pN4vB5cX6yZ8aR3tL2pN4vB5cX6yZ8=",
+      "email": "vikram.singh@company.in",
+      "first_name": "Vikram",
+      "last_name": "Singh",
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false
+    }
+  },
+  {
+    "model": "api.team",
+    "pk": 1,
+    "fields": {
+      "name": "Sales",
+      "description": "Sales and Business Development Team",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "api.team",
+    "pk": 2,
+    "fields": {
+      "name": "Marketing",
+      "description": "Digital Marketing and Branding Team",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "api.team",
+    "pk": 3,
+    "fields": {
+      "name": "Finance",
+      "description": "Finance and Accounting Team",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "api.team",
+    "pk": 4,
+    "fields": {
+      "name": "IT",
+      "description": "Information Technology Team",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "api.team",
+    "pk": 5,
+    "fields": {
+      "name": "HR",
+      "description": "Human Resources Team",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "api.employee",
+    "pk": 1,
+    "fields": {
+      "user": 1,
+      "employee_id": "ADMIN001",
+      "department": "Administration",
+      "team": null,
+      "position": "System Administrator",
+      "phone": "+91 98765 43210",
+      "role": "admin",
+      "hire_date": "2025-01-01",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.employee",
+    "pk": 2,
+    "fields": {
+      "user": 2,
+      "employee_id": "EMP001",
+      "department": "Sales",
+      "team": 1,
+      "position": "Sales Executive",
+      "phone": "+91 98765 43211",
+      "role": "employee",
+      "hire_date": "2025-02-15",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.employee",
+    "pk": 3,
+    "fields": {
+      "user": 3,
+      "employee_id": "EMP002",
+      "department": "Marketing",
+      "team": 2,
+      "position": "Marketing Manager",
+      "phone": "+91 98765 43212",
+      "role": "manager",
+      "hire_date": "2025-03-10",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.employee",
+    "pk": 4,
+    "fields": {
+      "user": 4,
+      "employee_id": "EMP003",
+      "department": "Finance",
+      "team": 3,
+      "position": "Finance Analyst",
+      "phone": "+91 98765 43213",
+      "role": "finance",
+      "hire_date": "2025-04-05",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.employee",
+    "pk": 5,
+    "fields": {
+      "user": 5,
+      "employee_id": "EMP004",
+      "department": "IT",
+      "team": 4,
+      "position": "IT Manager",
+      "phone": "+91 98765 43214",
+      "role": "manager",
+      "hire_date": "2025-05-12",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.category",
+    "pk": 1,
+    "fields": {
+      "name": "Office Supplies",
+      "code": "OFFICE",
+      "description": "Stationery, printer supplies, etc.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.category",
+    "pk": 2,
+    "fields": {
+      "name": "Business Lunch",
+      "code": "LUNCH",
+      "description": "Client and team lunches",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.category",
+    "pk": 3,
+    "fields": {
+      "name": "Travel",
+      "code": "TRAVEL",
+      "description": "Transportation, flights, trains",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.category",
+    "pk": 4,
+    "fields": {
+      "name": "Client Dinner",
+      "code": "DINNER",
+      "description": "Dinner meetings with clients",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.category",
+    "pk": 5,
+    "fields": {
+      "name": "Hotel",
+      "code": "HOTEL",
+      "description": "Accommodation expenses",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.category",
+    "pk": 6,
+    "fields": {
+      "name": "Software",
+      "code": "SOFTWARE",
+      "description": "Software licenses and subscriptions",
+      "is_active": true
+    }
+  }
+]

@@ -1,0 +1,72 @@
+[
+  {
+    "model": "api.trip",
+    "pk": "660e8400-e29b-41d4-a716-446655440001",
+    "fields": {
+      "destination": "Mumbai",
+      "purpose": "Client meeting with Reliance Industries",
+      "employee": 2,
+      "start_date": "2026-04-15",
+      "end_date": "2026-04-18",
+      "estimated_expenses": 25000.00,
+      "actual_expenses": 0,
+      "status": "approved"
+    }
+  },
+  {
+    "model": "api.trip",
+    "pk": "660e8400-e29b-41d4-a716-446655440002",
+    "fields": {
+      "destination": "Bengaluru",
+      "purpose": "Tech Conference 2026",
+      "employee": 3,
+      "start_date": "2026-04-22",
+      "end_date": "2026-04-25",
+      "estimated_expenses": 35000.00,
+      "actual_expenses": 0,
+      "status": "pending"
+    }
+  },
+  {
+    "model": "api.trip",
+    "pk": "660e8400-e29b-41d4-a716-446655440003",
+    "fields": {
+      "destination": "Delhi",
+      "purpose": "Government client presentation",
+      "employee": 5,
+      "start_date": "2026-05-05",
+      "end_date": "2026-05-08",
+      "estimated_expenses": 28000.00,
+      "actual_expenses": 0,
+      "status": "pending"
+    }
+  },
+  {
+    "model": "api.trip",
+    "pk": "660e8400-e29b-41d4-a716-446655440004",
+    "fields": {
+      "destination": "Chennai",
+      "purpose": "Factory visit and audit",
+      "employee": 4,
+      "start_date": "2026-03-25",
+      "end_date": "2026-03-28",
+      "estimated_expenses": 15000.00,
+      "actual_expenses": 14250.50,
+      "status": "completed"
+    }
+  },
+  {
+    "model": "api.trip",
+    "pk": "660e8400-e29b-41d4-a716-446655440005",
+    "fields": {
+      "destination": "Hyderabad",
+      "purpose": "Pharma client meeting",
+      "employee": 2,
+      "start_date": "2026-04-05",
+      "end_date": "2026-04-07",
+      "estimated_expenses": 18000.00,
+      "actual_expenses": 0,
+      "status": "approved"
+    }
+  }
+]

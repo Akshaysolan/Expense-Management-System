@@ -1,0 +1,114 @@
+[
+  {
+    "model": "api.expense",
+    "pk": "550e8400-e29b-41d4-a716-446655440001",
+    "fields": {
+      "subject": "Client Lunch at ITC Maurya",
+      "description": "Business lunch with client from Tata Motors",
+      "amount": 3500.00,
+      "date": "2026-03-15",
+      "employee": 2,
+      "team": 1,
+      "category": 2,
+      "status": "approved"
+    }
+  },
+  {
+    "model": "api.expense",
+    "pk": "550e8400-e29b-41d4-a716-446655440002",
+    "fields": {
+      "subject": "Flight to Mumbai",
+      "description": "Indigo flight 6E-123 for client meeting",
+      "amount": 5200.00,
+      "date": "2026-03-10",
+      "employee": 3,
+      "team": 2,
+      "category": 3,
+      "status": "approved"
+    }
+  },
+  {
+    "model": "api.expense",
+    "pk": "550e8400-e29b-41d4-a716-446655440003",
+    "fields": {
+      "subject": "Hotel Taj Mahal Palace",
+      "description": "2 nights stay at Taj Mumbai",
+      "amount": 12500.00,
+      "date": "2026-03-10",
+      "employee": 3,
+      "team": 2,
+      "category": 5,
+      "status": "approved"
+    }
+  },
+  {
+    "model": "api.expense",
+    "pk": "550e8400-e29b-41d4-a716-446655440004",
+    "fields": {
+      "subject": "Office Stationery",
+      "description": "Printer cartridges and paper",
+      "amount": 850.50,
+      "date": "2026-03-05",
+      "employee": 4,
+      "team": 3,
+      "category": 1,
+      "status": "approved"
+    }
+  },
+  {
+    "model": "api.expense",
+    "pk": "550e8400-e29b-41d4-a716-446655440005",
+    "fields": {
+      "subject": "Team Dinner",
+      "description": "Dinner at Barbeque Nation",
+      "amount": 4500.00,
+      "date": "2026-03-12",
+      "employee": 5,
+      "team": 4,
+      "category": 4,
+      "status": "pending"
+    }
+  },
+  {
+    "model": "api.expense",
+    "pk": "550e8400-e29b-41d4-a716-446655440006",
+    "fields": {
+      "subject": "Adobe Creative Cloud",
+      "description": "Annual subscription for design team",
+      "amount": 18000.00,
+      "date": "2026-03-01",
+      "employee": 3,
+      "team": 2,
+      "category": 6,
+      "status": "pending"
+    }
+  },
+  {
+    "model": "api.expense",
+    "pk": "550e8400-e29b-41d4-a716-446655440007",
+    "fields": {
+      "subject": "Train to Pune",
+      "description": "Shatabdi Express round trip",
+      "amount": 1200.00,
+      "date": "2026-03-08",
+      "employee": 2,
+      "team": 1,
+      "category": 3,
+      "status": "approved"
+    }
+  },
+  {
+    "model": "api.expense",
+    "pk": "550e8400-e29b-41d4-a716-446655440008",
+    "fields": {
+      "subject": "Client Entertainment",
+      "description": "IPL match tickets for clients",
+      "amount": 8000.00,
+      "date": "2026-03-18",
+      "employee": 2,
+      "team": 1,
+      "category": 4,
+      "status": "pending"
+    }
+  }
+]

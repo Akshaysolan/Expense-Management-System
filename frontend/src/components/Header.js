@@ -235,7 +235,7 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
                 </div>
 
                 <div className="header-dropdown-menu-items">
-                  <Link to="/profile" className="header-menu-item" onClick={() => setShowUserMenu(false)}>
+                  <Link to="/profile/:userId" className="header-menu-item" onClick={() => setShowUserMenu(false)}>
                     <User size={16} />
                     <span>My Profile</span>
                   </Link>

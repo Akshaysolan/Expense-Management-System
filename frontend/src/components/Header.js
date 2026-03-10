@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,13 +12,15 @@ import {
   Moon,
   Sun,
   ChevronDown,
-
+  ChevronLeft,
+  ChevronRight,
+  Menu,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 
 
-function Header({ toggleMobileSidebar }) {
+function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -43,7 +44,31 @@ function Header({ toggleMobileSidebar }) {
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
     >
       <div className="header-left-section">
-        
+
+        {/* ── Sidebar Toggle Button ── */}
+        {isMobile ? (
+          /* Mobile: hamburger opens the drawer */
+          <motion.button
+            className="header-sidebar-toggle"
+            onClick={toggleMobileSidebar}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            aria-label="Open menu"
+          >
+            <Menu size={20} />
+          </motion.button>
+        ) : (
+          /* Desktop: chevron collapses / expands sidebar */
+          <motion.button
+            className="header-sidebar-toggle"
+            onClick={toggleSidebar}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </motion.button>
+        )}
 
         <motion.div 
           className="header-greeting"
@@ -53,10 +78,10 @@ function Header({ toggleMobileSidebar }) {
         >
           <span className="header-greeting-emoji">✨</span>
           <div className="header-greeting-text">
-            <span className="header-greeting-welcome">Welcome back,</span>
-            <span className="header-greeting-name">{user?.name || 'Janice Chandler'}</span>
+            <span className="header-greeting-name">ExpensePro</span>
           </div>
         </motion.div>
+       
       </div>
 
       <div className="header-center-section">

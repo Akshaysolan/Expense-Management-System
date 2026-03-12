@@ -1,74 +1,78 @@
-// frontend/src/pages/ReportsPage.js
+// frontend/src/pages/ReportsPage.jsx
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Download, FileText, PieChart,
-  BarChart3, TrendingUp, Filter, ChevronRight,
-  Loader, AlertCircle
+  BarChart3, TrendingUp, Filter,
+  ChevronRight, Loader, AlertCircle,
+  RefreshCw, Calendar, Clock,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-
-
+// ─── Static data ──────────────────────────────────────────────────────────────
 const REPORT_CARDS = [
   {
-    id: 1,
-    title: 'Monthly Expense Summary',
+    id:          1,
+    title:       'Monthly Expense Summary',
     description: 'Overview of all expenses for the selected month',
-    icon: BarChart3,
-    color: '#3b82f6',
-    type: 'expense_summary',
+    icon:        BarChart3,
+    colorKey:    'blue',
+    type:        'expense_summary',
   },
   {
-    id: 2,
-    title: 'Department Spending',
+    id:          2,
+    title:       'Department Spending',
     description: 'Expense breakdown by department and team',
-    icon: PieChart,
-    color: '#10b981',
-    type: 'department_spending',
+    icon:        PieChart,
+    colorKey:    'green',
+    type:        'department_spending',
   },
   {
-    id: 3,
-    title: 'Travel Reports',
+    id:          3,
+    title:       'Travel Reports',
     description: 'Trip expenses and travel analytics',
-    icon: TrendingUp,
-    color: '#f59e0b',
-    type: 'travel_report',
+    icon:        TrendingUp,
+    colorKey:    'amber',
+    type:        'travel_report',
   },
   {
-    id: 4,
-    title: 'Category Analysis',
+    id:          4,
+    title:       'Category Analysis',
     description: 'Expense distribution by category',
-    icon: PieChart,
-    color: '#8b5cf6',
-    type: 'category_analysis',
+    icon:        PieChart,
+    colorKey:    'violet',
+    type:        'category_analysis',
   },
   {
-    id: 5,
-    title: 'Employee Expenses',
+    id:          5,
+    title:       'Employee Expenses',
     description: 'Individual employee spending analysis',
-    icon: FileText,
-    color: '#ec4899',
-    type: 'employee_expenses',
+    icon:        FileText,
+    colorKey:    'pink',
+    type:        'employee_expenses',
   },
   {
-    id: 6,
-    title: 'Yearly Comparison',
+    id:          6,
+    title:       'Yearly Comparison',
     description: 'Year-over-year expense trends',
-    icon: BarChart3,
-    color: '#14b8a6',
-    type: 'yearly_comparison',
+    icon:        BarChart3,
+    colorKey:    'teal',
+    type:        'yearly_comparison',
   },
 ];
 
 const QUICK_RANGES = [
-  { label: 'This Month',  value: 'month'      },
-  { label: 'Last Month',  value: 'last-month' },
+  { label: 'This Month',   value: 'month'      },
+  { label: 'Last Month',   value: 'last-month' },
   { label: 'This Quarter', value: 'quarter'    },
-  { label: 'This Year',   value: 'year'       },
+  { label: 'This Year',    value: 'year'       },
   { label: 'Custom Range', value: 'custom'     },
+];
+
+const REPORT_TYPES = [
+  { label: 'Expense Reports', value: 'expense' },
+  { label: 'Trip Reports',    value: 'trip'    },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -92,44 +96,133 @@ function getDateRange(rangeValue, customRange) {
       const e = new Date(today.getFullYear(), (q + 1) * 3, 0);
       return { start: s.toISOString().split('T')[0], end: e.toISOString().split('T')[0] };
     }
-    case 'year': {
+    case 'year':
       return {
         start: `${today.getFullYear()}-01-01`,
         end:   `${today.getFullYear()}-12-31`,
       };
-    }
     default:
       return customRange;
   }
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+function formatDate(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  });
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function ReportCard({ card, isGenerating, onGenerate }) {
+  const Icon = card.icon;
+
+  return (
+    <motion.article
+      className={`rp-card rp-card--${card.colorKey}`}
+      whileHover={{ y: -4, scale: 1.01 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+      aria-label={`${card.title} report card`}
+    >
+      <div className="rp-card__icon-wrap" aria-hidden="true">
+        <Icon size={22} strokeWidth={2} />
+      </div>
+
+      <h3 className="rp-card__title">{card.title}</h3>
+      <p className="rp-card__desc">{card.description}</p>
+
+      <div className="rp-card__footer">
+        <button
+          className={`rp-card__gen-btn ${isGenerating ? 'rp-card__gen-btn--busy' : ''}`}
+          onClick={() => onGenerate(card)}
+          disabled={isGenerating}
+          aria-label={isGenerating ? `Generating ${card.title}` : `Generate ${card.title}`}
+        >
+          {isGenerating ? (
+            <>
+              <Loader size={14} className="rp-spin" aria-hidden="true" />
+              <span>Generating…</span>
+            </>
+          ) : (
+            <>
+              <span>Generate Report</span>
+              <ChevronRight size={15} aria-hidden="true" />
+            </>
+          )}
+        </button>
+      </div>
+    </motion.article>
+  );
+}
+
+function RecentReportRow({ report, onDownload }) {
+  return (
+    <motion.div
+      className="rp-recent-item"
+      initial={{ opacity: 0, x: -12 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+    >
+      <span className="rp-recent-item__icon" aria-hidden="true">
+        <FileText size={18} />
+      </span>
+
+      <div className="rp-recent-item__info">
+        <h4 className="rp-recent-item__title">{report.title}</h4>
+        <p className="rp-recent-item__meta">
+          <Clock size={11} aria-hidden="true" />
+          {formatDate(report.created_at)}
+          {report.date_range_start && (
+            <>
+              <span className="rp-recent-item__sep" aria-hidden="true">·</span>
+              <Calendar size={11} aria-hidden="true" />
+              {report.date_range_start} → {report.date_range_end}
+            </>
+          )}
+        </p>
+      </div>
+
+      <span className={`rp-recent-item__badge rp-recent-item__badge--${report.format || 'pdf'}`}>
+        {(report.format || 'PDF').toUpperCase()}
+      </span>
+
+      <button
+        className="rp-recent-item__dl-btn"
+        onClick={() => onDownload(report.report_id)}
+        aria-label={`Download ${report.title}`}
+        title="Download"
+      >
+        <Download size={15} />
+      </button>
+    </motion.div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 function ReportsPage() {
-  const { authAxios } = useAuth(); // Use the shared axios instance from AuthContext
-  
+  const { authAxios } = useAuth();
+
   const [dateRange,       setDateRange]       = useState('month');
   const [reportType,      setReportType]      = useState('expense');
   const [loading,         setLoading]         = useState(false);
-  const [generating,      setGenerating]      = useState(null); // card id being generated
+  const [generating,      setGenerating]      = useState(null);
   const [recentReports,   setRecentReports]   = useState([]);
   const [error,           setError]           = useState(null);
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
 
-  useEffect(() => {
-    fetchRecentReports();
-  }, []);
+  useEffect(() => { fetchRecentReports(); }, []);
 
-  // ── API calls ──────────────────────────────────────────────────────────────
-
+  // ── API ────────────────────────────────────────────────────────────────────
   const fetchRecentReports = async () => {
     try {
       setLoading(true);
-      const response = await authAxios.get('/reports/recent/');
-      setRecentReports(response.data);
+      const res = await authAxios.get('/reports/recent/');
+      setRecentReports(res.data);
       setError(null);
-    } catch (err) {
-      setError('Failed to fetch recent reports');
-      console.error('Error fetching reports:', err);
+    } catch {
+      setError('Failed to fetch recent reports. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -139,7 +232,6 @@ function ReportsPage() {
     try {
       setGenerating(card.id);
       const range = getDateRange(dateRange, customDateRange);
-
       await authAxios.post('/reports/generate/', {
         report_type:      card.type,
         date_range_start: range.start,
@@ -147,11 +239,9 @@ function ReportsPage() {
         format:           'pdf',
         filters:          {},
       });
-
       await fetchRecentReports();
-    } catch (err) {
-      setError('Failed to generate report');
-      console.error('Error generating report:', err);
+    } catch {
+      setError('Failed to generate report. Please try again.');
     } finally {
       setGenerating(null);
     }
@@ -159,11 +249,10 @@ function ReportsPage() {
 
   const handleDownloadReport = async (reportId) => {
     try {
-      const response = await authAxios.get(`/reports/download/${reportId}/`, {
+      const res = await authAxios.get(`/reports/download/${reportId}/`, {
         responseType: 'blob',
       });
-
-      const url  = window.URL.createObjectURL(new Blob([response.data]));
+      const url  = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href  = url;
       link.setAttribute('download', `report_${reportId}.pdf`);
@@ -171,97 +260,83 @@ function ReportsPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
-      setError('Failed to download report');
-      console.error('Error downloading report:', err);
+    } catch {
+      setError('Failed to download report. Please try again.');
     }
   };
 
-  // ── Derived data ───────────────────────────────────────────────────────────
-
-  const visibleCards = REPORT_CARDS.filter((card) =>
-    reportType === 'expense'
-      ? !card.type.includes('travel')
-      : card.type.includes('travel')
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const visibleCards = REPORT_CARDS.filter((c) =>
+    reportType === 'expense' ? !c.type.includes('travel') : c.type.includes('travel')
   );
 
-  // ── Styles ─────────────────────────────────────────────────────────────────
-  const styles = {
-    page:            { maxWidth: '1400px', margin: '0 auto', padding: '2rem', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
-    pageHeaderH1:    { fontSize: '2rem', color: '#1a1a1a', marginBottom: '0.5rem', fontWeight: '600' },
-    subtitle:        { color: '#666', fontSize: '1rem' },
-    filters:         { background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', marginBottom: '2rem' },
-    filterLabel:     { display: 'block', fontWeight: '500', color: '#4a5568', marginBottom: '0.5rem' },
-    filterButtons:   { display: 'flex', gap: '0.5rem', flexWrap: 'wrap' },
-    filterBtn:       { padding: '0.5rem 1rem', border: '1px solid #e2e8f0', background: 'white', borderRadius: '20px', fontSize: '0.875rem', color: '#4a5568', cursor: 'pointer' },
-    filterBtnActive: { background: '#3b82f6', color: 'white', borderColor: '#3b82f6' },
-    customDateRange: { display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1rem 0' },
-    dateInput:       { padding: '0.5rem', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.875rem' },
-    applyBtn:        { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '500', cursor: 'pointer', marginTop: '1rem' },
-    reportsGrid:     { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' },
-    reportCard:      { background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', cursor: 'pointer' },
-    reportIcon:      { width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' },
-    reportH3:        { fontSize: '1.125rem', color: '#1a1a1a', marginBottom: '0.5rem', fontWeight: '600' },
-    reportP:         { color: '#666', fontSize: '0.875rem', lineHeight: '1.5', margin: 0 },
-    reportFooter:    { marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' },
-    viewBtn:         { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '0.5rem', background: 'none', border: 'none', color: '#3b82f6', fontWeight: '500', cursor: 'pointer' },
-    savedSection:    { background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' },
-    sectionHeader:   { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' },
-    sectionH2:       { fontSize: '1.25rem', color: '#1a1a1a', fontWeight: '600', margin: 0 },
-    refreshBtn:      { padding: '0.5rem 1rem', background: 'none', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#4a5568', cursor: 'pointer' },
-    reportItem:      { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: '#f9fafc', borderRadius: '8px', marginBottom: '0.75rem' },
-    reportItemIcon:  { width: '40px', height: '40px', minWidth: '40px', background: '#e2e8f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4a5568' },
-    reportInfo:      { flex: 1 },
-    reportInfoH4:    { fontSize: '1rem', color: '#1a1a1a', fontWeight: '500', margin: '0 0 0.25rem 0' },
-    reportInfoP:     { fontSize: '0.875rem', color: '#666', margin: 0 },
-    downloadBtn:     { padding: '0.5rem', background: 'none', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#4a5568', cursor: 'pointer' },
-    noReports:       { textAlign: 'center', color: '#666', padding: '2rem' },
-    errorMsg:        { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '1rem', background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px', color: '#dc2626', marginBottom: '1rem', position: 'relative' },
-    errorClose:      { position: 'absolute', right: '1rem', background: 'none', border: 'none', color: '#dc2626', fontSize: '1.25rem', cursor: 'pointer' },
-    spinner:         { animation: 'spin 1s linear infinite' },
-    loadingWrap:     { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', color: '#666' },
-  };
-
+  // ── Initial loading screen ─────────────────────────────────────────────────
   if (loading && recentReports.length === 0) {
     return (
-      <div style={styles.loadingWrap}>
-        <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
-        <Loader style={styles.spinner} size={40} />
+      <div className="rp-loading-screen" role="status" aria-label="Loading reports">
+        <Loader size={38} className="rp-spin" />
         <p>Loading reports…</p>
       </div>
     );
   }
 
   return (
-    <div style={styles.page}>
-      <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
+    <main className="rp-page">
 
-      {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={styles.pageHeaderH1}>Reports &amp; Analytics</h1>
-        <p style={styles.subtitle}>Generate and download expense reports</p>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div style={styles.errorMsg}>
-          <AlertCircle size={20} />
-          <span>{error}</span>
-          <button style={styles.errorClose} onClick={() => setError(null)}>×</button>
+      {/* ── Page header ─────────────────────────────────────────────────── */}
+      <motion.div
+        className="rp-page-header"
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+      >
+        <div>
+          <h1 className="rp-page-header__title">Reports &amp; Analytics</h1>
+          <p className="rp-page-header__subtitle">Generate, filter and download expense reports</p>
         </div>
-      )}
+      </motion.div>
 
-      {/* Filters */}
-      <div style={styles.filters}>
+      {/* ── Error banner ────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            className="rp-error"
+            role="alert"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+          >
+            <AlertCircle size={18} aria-hidden="true" />
+            <span>{error}</span>
+            <button
+              className="rp-error__close"
+              onClick={() => setError(null)}
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Filters panel ───────────────────────────────────────────────── */}
+      <motion.section
+        className="rp-filters"
+        aria-label="Report filters"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08, type: 'spring', stiffness: 260, damping: 26 }}
+      >
         {/* Date range */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={styles.filterLabel}>Date Range</label>
-          <div style={styles.filterButtons}>
+        <div className="rp-filters__group">
+          <label className="rp-filters__label" id="date-range-label">Date Range</label>
+          <div className="rp-filters__pills" role="group" aria-labelledby="date-range-label">
             {QUICK_RANGES.map((r) => (
               <button
                 key={r.value}
-                style={{ ...styles.filterBtn, ...(dateRange === r.value ? styles.filterBtnActive : {}) }}
+                className={`rp-pill ${dateRange === r.value ? 'rp-pill--active' : ''}`}
                 onClick={() => setDateRange(r.value)}
+                aria-pressed={dateRange === r.value}
               >
                 {r.label}
               </button>
@@ -269,33 +344,47 @@ function ReportsPage() {
           </div>
         </div>
 
-        {dateRange === 'custom' && (
-          <div style={styles.customDateRange}>
-            <input
-              type="date"
-              value={customDateRange.start}
-              onChange={(e) => setCustomDateRange({ ...customDateRange, start: e.target.value })}
-              style={styles.dateInput}
-            />
-            <span>to</span>
-            <input
-              type="date"
-              value={customDateRange.end}
-              onChange={(e) => setCustomDateRange({ ...customDateRange, end: e.target.value })}
-              style={styles.dateInput}
-            />
-          </div>
-        )}
+        {/* Custom date inputs */}
+        <AnimatePresence>
+          {dateRange === 'custom' && (
+            <motion.div
+              className="rp-custom-range"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <label className="rp-sr-only" htmlFor="custom-start">Start date</label>
+              <input
+                id="custom-start"
+                type="date"
+                className="rp-date-input"
+                value={customDateRange.start}
+                onChange={(e) => setCustomDateRange(p => ({ ...p, start: e.target.value }))}
+              />
+              <span className="rp-custom-range__sep" aria-hidden="true">→</span>
+              <label className="rp-sr-only" htmlFor="custom-end">End date</label>
+              <input
+                id="custom-end"
+                type="date"
+                className="rp-date-input"
+                value={customDateRange.end}
+                onChange={(e) => setCustomDateRange(p => ({ ...p, end: e.target.value }))}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Report type */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={styles.filterLabel}>Report Type</label>
-          <div style={styles.filterButtons}>
-            {[{ label: 'Expense Reports', value: 'expense' }, { label: 'Trip Reports', value: 'trip' }].map((t) => (
+        <div className="rp-filters__group">
+          <label className="rp-filters__label" id="report-type-label">Report Type</label>
+          <div className="rp-filters__pills" role="group" aria-labelledby="report-type-label">
+            {REPORT_TYPES.map((t) => (
               <button
                 key={t.value}
-                style={{ ...styles.filterBtn, ...(reportType === t.value ? styles.filterBtnActive : {}) }}
+                className={`rp-pill ${reportType === t.value ? 'rp-pill--active' : ''}`}
                 onClick={() => setReportType(t.value)}
+                aria-pressed={reportType === t.value}
               >
                 {t.label}
               </button>
@@ -303,82 +392,81 @@ function ReportsPage() {
           </div>
         </div>
 
-        <button style={styles.applyBtn} onClick={fetchRecentReports} disabled={loading}>
-          {loading ? <Loader size={16} style={styles.spinner} /> : <Filter size={16} />}
+        {/* Apply */}
+        <button
+          className="rp-apply-btn"
+          onClick={fetchRecentReports}
+          disabled={loading}
+          aria-label="Apply filters and refresh reports"
+        >
+          {loading
+            ? <Loader size={15} className="rp-spin" aria-hidden="true" />
+            : <Filter size={15} aria-hidden="true" />}
           Apply Filters
         </button>
-      </div>
+      </motion.section>
 
-      {/* Report Cards */}
-      <div style={styles.reportsGrid}>
-        {visibleCards.map((card) => {
-          const isGenerating = generating === card.id;
-          return (
+      {/* ── Report cards grid ────────────────────────────────────────────── */}
+      <section aria-label="Available report types">
+        <div className="rp-cards-grid">
+          {visibleCards.map((card, idx) => (
             <motion.div
               key={card.id}
-              style={styles.reportCard}
-              whileHover={{ y: -4 }}
-              transition={{ type: 'spring', stiffness: 300 }}
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.06, type: 'spring', stiffness: 280, damping: 24 }}
             >
-              <div style={{ ...styles.reportIcon, backgroundColor: `${card.color}20` }}>
-                <card.icon color={card.color} size={24} />
-              </div>
-              <h3 style={styles.reportH3}>{card.title}</h3>
-              <p style={styles.reportP}>{card.description}</p>
-              <div style={styles.reportFooter}>
-                <button
-                  style={{ ...styles.viewBtn, ...(isGenerating ? { color: '#a0aec0', cursor: 'not-allowed' } : {}) }}
-                  onClick={() => handleGenerateReport(card)}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <><Loader size={14} style={styles.spinner} /> Generating…</>
-                  ) : (
-                    <>Generate Report <ChevronRight size={16} /></>
-                  )}
-                </button>
-              </div>
+              <ReportCard
+                card={card}
+                isGenerating={generating === card.id}
+                onGenerate={handleGenerateReport}
+              />
             </motion.div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      </section>
 
-      {/* Recently Generated Reports */}
-      <div style={styles.savedSection}>
-        <div style={styles.sectionHeader}>
-          <h2 style={styles.sectionH2}>Recently Generated Reports</h2>
-          <button style={styles.refreshBtn} onClick={fetchRecentReports} disabled={loading}>
-            {loading ? <Loader size={14} style={styles.spinner} /> : 'Refresh'}
+      {/* ── Recent reports ───────────────────────────────────────────────── */}
+      <motion.section
+        className="rp-recent"
+        aria-label="Recently generated reports"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, type: 'spring', stiffness: 260, damping: 26 }}
+      >
+        <div className="rp-recent__header">
+          <h2 className="rp-recent__title">Recently Generated</h2>
+          <button
+            className="rp-recent__refresh"
+            onClick={fetchRecentReports}
+            disabled={loading}
+            aria-label="Refresh recent reports"
+          >
+            <RefreshCw size={14} className={loading ? 'rp-spin' : ''} aria-hidden="true" />
+            Refresh
           </button>
         </div>
 
         {recentReports.length > 0 ? (
-          recentReports.map((report) => (
-            <div key={report.id} style={styles.reportItem}>
-              <div style={styles.reportItemIcon}>
-                <FileText size={20} />
-              </div>
-              <div style={styles.reportInfo}>
-                <h4 style={styles.reportInfoH4}>{report.title}</h4>
-                <p style={styles.reportInfoP}>
-                  Generated on {new Date(report.created_at).toLocaleDateString()}
-                  {report.date_range_start && ` • ${report.date_range_start} to ${report.date_range_end}`}
-                </p>
-              </div>
-              <button
-                style={styles.downloadBtn}
-                onClick={() => handleDownloadReport(report.report_id)}
-                title="Download Report"
-              >
-                <Download size={16} />
-              </button>
-            </div>
-          ))
+          <div className="rp-recent__list">
+            {recentReports.map((report) => (
+              <RecentReportRow
+                key={report.id}
+                report={report}
+                onDownload={handleDownloadReport}
+              />
+            ))}
+          </div>
         ) : (
-          <p style={styles.noReports}>No reports generated yet</p>
+          <div className="rp-recent__empty" role="status">
+            <FileText size={36} aria-hidden="true" />
+            <p>No reports generated yet</p>
+            <span>Generate a report above to see it here</span>
+          </div>
         )}
-      </div>
-    </div>
+      </motion.section>
+
+    </main>
   );
 }
 

@@ -3,6 +3,14 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from .models import Team, Employee, Category, Expense, Trip, PDFUpload
+from .models import (
+    FAQ, Document, SupportTicket, TicketReply, 
+    LiveChatSession, ChatMessage, FAQFeedback, 
+    SupportStat, VideoBooking
+)
+from django.contrib.auth import get_user_model
+
+from .models import Report
 
 # ========== USER AUTH SERIALIZERS ==========
 
@@ -251,14 +259,6 @@ class PDFUploadSerializer(serializers.ModelSerializer):
 
 # ========== SUPPORT SERIALIZERS ==========
 
-from rest_framework import serializers
-from .models import (
-    FAQ, Document, SupportTicket, TicketReply, 
-    LiveChatSession, ChatMessage, FAQFeedback, 
-    SupportStat, VideoBooking
-)
-from django.contrib.auth import get_user_model
-
 User = get_user_model()
 
 class FAQSerializer(serializers.ModelSerializer):
@@ -340,9 +340,6 @@ class VideoBookingSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['status', 'meeting_link', 'created_at', 'booking_id']
 
-
-from rest_framework import serializers
-from .models import Report
  
  
 class ReportSerializer(serializers.ModelSerializer):

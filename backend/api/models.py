@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 import uuid
+from django.contrib.auth import get_user_model
 
 class Team(models.Model):
     name = models.CharField(max_length=100)
@@ -119,8 +120,6 @@ class PendingTask(models.Model):
 
 
 # ========== SUPPORT APP MODELS ==========
-
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 

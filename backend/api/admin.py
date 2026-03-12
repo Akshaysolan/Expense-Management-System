@@ -60,12 +60,6 @@ class PDFUploadAdmin(admin.ModelAdmin):
     list_display = ['id', 'processed', 'expenses_found', 'uploaded_at', 'uploaded_by']
 
 # Support app admin registrations
-from django.contrib import admin
-from .models import (
-    FAQ, Document, SupportTicket, TicketReply, 
-    LiveChatSession, ChatMessage, FAQFeedback, 
-    SupportStat, VideoBooking
-)
 
 @admin.register(FAQ)
 class FAQAdmin(admin.ModelAdmin):

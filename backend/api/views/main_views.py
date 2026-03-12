@@ -1,12 +1,33 @@
 # api/views/main_views.py
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from datetime import timedelta, datetime
+from django.http import HttpResponse, Http404
+from django.core.files.base import ContentFile
+from ..models import Report, Employee
+from ..serializers import ReportSerializer, GenerateReportSerializer
+from rest_framework import generics, status, viewsets
+from django.core.mail import send_mail
+from django.conf import settings
+import uuid
+from ..models import Notification, MessageThread, Message, MessageReadStatus
+
+# Import your serializers
+from ..serializers import (
+    NotificationSerializer, 
+    MessageThreadSerializer, 
+    MessageThreadDetailSerializer,
+    MessageSerializer
+)
+
+import random
+from datetime import timedelta
+from ..models import Employee, Expense, Trip
 import json
 import os
 from ..models import Team, Employee, Category, Expense, Trip, PDFUpload
@@ -724,16 +745,6 @@ def generate_report(request):
 
 # ========== SUPPORT API ==========
 
-from rest_framework import generics, status, viewsets
-from rest_framework.decorators import api_view, action
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.utils import timezone
-from django.db.models import Q
-from django.core.mail import send_mail
-from django.conf import settings
-import uuid
-import random
 
 from api.models import (
     FAQ, Document, SupportTicket, TicketReply, 
@@ -1048,18 +1059,6 @@ def test_all_expenses(request):
     serializer = ExpenseSerializer(expenses, many=True)
     return Response(serializer.data)
 
-
-
-from django.http import HttpResponse, Http404
-from django.utils import timezone
- 
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
- 
-from ..models import Report, Employee
-from ..serializers import ReportSerializer, GenerateReportSerializer
  
 # ---------------------------------------------------------------------------
 # Friendly display names  (mirrors the frontend `reports` array titles)
@@ -1155,7 +1154,7 @@ def generate_report(request):
     )
  
     # Save the PDF file to the report instance
-    from django.core.files.base import ContentFile
+   
     filename = f"report_{report.report_id}.pdf"
     report.file.save(filename, ContentFile(pdf_bytes), save=True)
  
@@ -1821,4 +1820,252 @@ def analytics(request):
         'by_status':     by_status,
         'top_spenders':  top_spenders,
     })
+ 
+
+ 
+ 
+# ──────────────────────────────────────────────────────────────────────────────
+# Helpers
+# ──────────────────────────────────────────────────────────────────────────────
+ 
+def _expense_qs(employee):
+    """Return an Expense queryset scoped to the employee's role."""
+    if employee.role == 'admin':
+        return Expense.objects.all()
+    if employee.role == 'manager' and employee.team:
+        return Expense.objects.filter(team=employee.team)
+    return Expense.objects.filter(employee=employee)
+ 
+ 
+def _trip_qs(employee):
+    """Return a Trip queryset scoped to the employee's role."""
+    if employee.role == 'admin':
+        return Trip.objects.all()
+    if employee.role == 'manager' and employee.team:
+        return Trip.objects.filter(employee__team=employee.team)
+    return Trip.objects.filter(employee=employee)
+ 
+ 
+# ──────────────────────────────────────────────────────────────────────────────
+# View
+# ──────────────────────────────────────────────────────────────────────────────
+ 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def pending_tasks(request):
+    """
+    Return role-aware pending-task counts for the authenticated user.
+ 
+    Query parameters (all optional):
+      refresh=1   Force re-computation (no-op now; placeholder for caching).
+    """
+    try:
+        employee = Employee.objects.select_related('team').get(user=request.user)
+    except Employee.DoesNotExist:
+        return Response(
+            {'error': 'Employee profile not found'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+ 
+    expenses = _expense_qs(employee)
+    trips    = _trip_qs(employee)
+    now      = timezone.now()
+    today    = now.date()
+ 
+    # ── 1. Printing Approvals ──────────────────────────────────────────────
+    # Expenses that are pending approval (managers/admins see their scope).
+    printing_approvals_count = expenses.filter(status='pending').count()
+ 
+    # ── 2. New Trips Registered ───────────────────────────────────────────
+    # Trips submitted (status=pending) in the last 7 days.
+    new_trips_count = trips.filter(
+        status='pending',
+        created_at__gte=now - timedelta(days=7),
+    ).count()
+ 
+    # ── 3. Unreported Expenses ────────────────────────────────────────────
+    # Approved expenses that haven't been included in a report yet
+    # (approximated as: approved & older than 7 days but within 90 days).
+    unreported_count = expenses.filter(
+        status='approved',
+        date__lt=today - timedelta(days=7),
+        date__gte=today - timedelta(days=90),
+    ).count()
+ 
+    # ── 4. Upcoming Expenses ──────────────────────────────────────────────
+    # Trips whose start_date is in the next 14 days and status is 'approved'.
+    upcoming_count = trips.filter(
+        status='approved',
+        start_date__gte=today,
+        start_date__lte=today + timedelta(days=14),
+    ).count()
+ 
+    # ── 5. Unreported Advances ────────────────────────────────────────────
+    # Sum of pending expenses > £100 for the current employee (always personal).
+    personal_expenses = Expense.objects.filter(employee=employee)
+    advances_value = (
+        personal_expenses
+        .filter(status='pending', amount__gt=100)
+        .aggregate(total=Sum('amount'))['total']
+        or 0
+    )
+    advances_count = (
+        personal_expenses
+        .filter(status='pending', amount__gt=100)
+        .count()
+    )
+ 
+    tasks = [
+        {
+            'id':        1,
+            'task_name': 'Printing Approvals',
+            'count':     printing_approvals_count,
+        },
+        {
+            'id':        2,
+            'task_name': 'New Trips Registered',
+            'count':     new_trips_count,
+        },
+        {
+            'id':        3,
+            'task_name': 'Unreported Expenses',
+            'count':     unreported_count,
+        },
+        {
+            'id':        4,
+            'task_name': 'Upcoming Expenses',
+            'count':     upcoming_count,
+        },
+        {
+            'id':        5,
+            'task_name': 'Unreported Advances',
+            'count':     advances_count,
+            'value':     float(advances_value),
+        },
+    ]
+ 
+    return Response(tasks)
+
+
+ALL_ACTIONS = [
+    {
+        "id":          "new-expense",
+        "label":       "New Expense",
+        "description": "Log a business expense",
+        "icon":        "Plus",
+        "color":       "indigo",
+        "shortcut":    "N",
+        "route":       "/expenses/new",
+        "allowed_roles": ["employee", "manager", "finance", "admin"],
+    },
+    {
+        "id":          "add-receipt",
+        "label":       "Add Receipt",
+        "description": "Upload receipt or PDF",
+        "icon":        "Receipt",
+        "color":       "emerald",
+        "shortcut":    "R",
+        "route":       "/receipts/upload",
+        "allowed_roles": ["employee", "manager", "finance", "admin"],
+    },
+    {
+        "id":          "create-report",
+        "label":       "Create Report",
+        "description": "Generate expense report",
+        "icon":        "FileText",
+        "color":       "amber",
+        "shortcut":    "P",
+        "route":       "/reports/new",
+        # Only finance, manager and admin can generate reports
+        "allowed_roles": ["manager", "finance", "admin"],
+    },
+    {
+        "id":          "create-trip",
+        "label":       "Create Trip",
+        "description": "Plan a business trip",
+        "icon":        "Plane",
+        "color":       "rose",
+        "shortcut":    "T",
+        "route":       "/trips/new",
+        "allowed_roles": ["employee", "manager", "finance", "admin"],
+    },
+]
+ 
+ 
+def _build_action(raw: dict, role: str) -> dict:
+    """Return a serialisable action dict for the given role."""
+    return {
+        "id":          raw["id"],
+        "label":       raw["label"],
+        "description": raw["description"],
+        "icon":        raw["icon"],
+        "color":       raw["color"],
+        "shortcut":    raw["shortcut"],
+        "route":       raw["route"],
+        "enabled":     role in raw["allowed_roles"],
+    }
+ 
+ 
+# ─── GET /api/quick-access/ ───────────────────────────────────────────────
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def quick_access_actions(request):
+    """
+    Return quick-access actions available to the authenticated user.
+ 
+    Actions the user's role cannot perform are returned with
+    ``"enabled": false`` so the frontend can still render them as
+    disabled/greyed-out tiles.
+    """
+    try:
+        employee = Employee.objects.select_related("team").get(user=request.user)
+    except Employee.DoesNotExist:
+        return Response(
+            {"error": "Employee profile not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+ 
+    role = employee.role or "employee"
+    actions = [_build_action(a, role) for a in ALL_ACTIONS]
+ 
+    return Response(actions)
+ 
+ 
+# ─── POST /api/quick-access/action/ ──────────────────────────────────────
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def log_quick_access_action(request):
+    """
+    Record that a user clicked a quick-access tile.
+ 
+    Useful for audit logs and feature-usage analytics.
+ 
+    Request body:
+      { "action_id": "new-expense" }
+    """
+    action_id = request.data.get("action_id", "").strip()
+ 
+    valid_ids = {a["id"] for a in ALL_ACTIONS}
+    if action_id not in valid_ids:
+        return Response(
+            {"error": f"Unknown action_id '{action_id}'"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+ 
+    # ── Optional: persist to an audit log model ──
+    # If you add a QuickAccessLog model later, create it here:
+    # QuickAccessLog.objects.create(
+    #     user=request.user,
+    #     action_id=action_id,
+    #     timestamp=timezone.now(),
+    # )
+ 
+    return Response(
+        {
+            "status":     "logged",
+            "action_id":  action_id,
+            "timestamp":  timezone.now().isoformat(),
+        },
+        status=status.HTTP_200_OK,
+    )
  

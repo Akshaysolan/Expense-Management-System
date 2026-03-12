@@ -42,4 +42,27 @@ urlpatterns = [
     
     # ========== REPORTS ==========
     path('reports/', views.generate_report, name='generate-report'),
+    
+    # ========== SUPPORT ==========
+    path('faqs/', views.FAQListView.as_view(), name='faq-list'),
+    path('documents/', views.DocumentListView.as_view(), name='document-list'),
+    path('stats/', views.SupportStatListView.as_view(), name='stat-list'),
+    
+    # Support tickets
+    path('tickets/', views.CreateSupportTicketView.as_view(), name='create-ticket'),
+    path('tickets/<str:ticket_id>/', views.TicketDetailView.as_view(), name='ticket-detail'),
+    path('tickets/<str:ticket_id>/replies/', views.AddTicketReplyView.as_view(), name='add-reply'),
+    
+    # Live chat
+    path('chat/sessions/', views.create_chat_session, name='create-chat'),
+    path('chat/sessions/<str:session_id>/messages/', views.get_chat_messages, name='get-messages'),
+    path('chat/sessions/<str:session_id>/send/', views.send_chat_message, name='send-message'),
+    path('chat/sessions/<str:session_id>/close/', views.close_chat_session, name='close-chat'),
+    
+    # Feedback and interactions
+    path('faq/feedback/', views.faq_feedback, name='faq-feedback'),
+    path('video/book/', views.book_video_call, name='book-video'),
+    path('stats/realtime/', views.get_support_stats, name='realtime-stats'),
+    path('subscribe/', views.subscribe_to_updates, name='subscribe'),
+    
 ]

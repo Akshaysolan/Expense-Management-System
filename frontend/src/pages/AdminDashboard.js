@@ -1,291 +1,361 @@
-// // frontend/src/pages/AdminDashboard.js
-// import React, { useState, useEffect } from 'react';
-// import { motion } from 'framer-motion';
-// import { 
-//   Users, Building2, TrendingUp, DollarSign,
-//   UserPlus, Settings, Download, Filter,
-//   BarChart3, PieChart, Calendar, ChevronRight,
-//   Mail, Phone, MapPin, Award
-// } from 'lucide-react';
-// import { useAuth } from '../contexts/AuthContext';
-// import { api } from '../contexts/AuthContext';
+// frontend/src/pages/AdminDashboard.js
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  Users, 
+  DollarSign, 
+  TrendingUp, 
+  Activity,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Download,
+  MoreVertical,
+  Mail,
+  Phone,
+  MapPin,
+  Award,
+  Filter
+} from 'lucide-react';
+import { useAuth, authAxios } from '../contexts/AuthContext';
 
-// function AdminDashboard() {
-//   const { user } = useAuth();
-//   const [stats, setStats] = useState({
-//     totalUsers: 0,
-//     totalExpenses: 0,
-//     totalAmount: 0,
-//     pendingApprovals: 0,
-//     activeTeams: 0
-//   });
-//   const [recentUsers, setRecentUsers] = useState([]);
-//   const [recentExpenses, setRecentExpenses] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [timeframe, setTimeframe] = useState('month');
+function AdminDashboard() {
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalExpenses: 0,
+    pendingApprovals: 0,
+    monthlySpend: 0
+  });
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState('week');
 
-//   useEffect(() => {
-//     fetchAdminData();
-//   }, [timeframe]);
+  useEffect(() => {
+    fetchDashboardData();
+  }, [dateRange]);
 
-//   const fetchAdminData = async () => {
-//     try {
-//       setLoading(true);
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [statsRes, activitiesRes, pendingRes] = await Promise.all([
+        authAxios.get('/admin/stats/'),
+        authAxios.get('/admin/recent-activities/'),
+        authAxios.get('/admin/pending-approvals/')
+      ]);
       
-//       // Fetch users
-//       const usersRes = await api.get('/employees/');
-//       setRecentUsers(usersRes.data.slice(0, 5));
+      setStats(statsRes.data);
+      setRecentActivities(activitiesRes.data);
+      setPendingApprovals(pendingRes.data);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (id, type) => {
+    try {
+      await authAxios.post(`/admin/approve/${type}/${id}/`);
+      fetchDashboardData(); // Refresh data
+    } catch (error) {
+      console.error('Error approving:', error);
+    }
+  };
+
+  const handleReject = async (id, type) => {
+    try {
+      await authAxios.post(`/admin/reject/${type}/${id}/`);
+      fetchDashboardData(); // Refresh data
+    } catch (error) {
+      console.error('Error rejecting:', error);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const response = await authAxios.get('/admin/export/', {
+        responseType: 'blob'
+      });
       
-//       // Fetch expenses stats
-//       const expensesRes = await api.get('/expenses/stats/');
-//       setStats({
-//         totalUsers: usersRes.data.length,
-//         totalExpenses: expensesRes.data.total_expenses || 0,
-//         totalAmount: expensesRes.data.total_amount || 0,
-//         pendingApprovals: expensesRes.data.status_distribution?.find(s => s.status === 'pending')?.count || 0,
-//         activeTeams: 5 // This should come from API
-//       });
-      
-//       // Fetch recent expenses
-//       const recentRes = await api.get('/expenses/?limit=10');
-//       setRecentExpenses(recentRes.data);
-      
-//     } catch (err) {
-//       console.error('Error fetching admin data:', err);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `expense-report-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Error exporting data:', error);
+    }
+  };
 
-//   const StatCard = ({ icon: Icon, title, value, change, color }) => (
-//     <motion.div 
-//       className="admin-stat-card"
-//       whileHover={{ y: -4 }}
-//       transition={{ type: 'spring', stiffness: 300 }}
-//     >
-//       <div className="admin-stat-icon" style={{ backgroundColor: `${color}20`, color }}>
-//         <Icon size={24} />
-//       </div>
-//       <div className="admin-stat-content">
-//         <h3 className="admin-stat-title">{title}</h3>
-//         <p className="admin-stat-value">{value}</p>
-//         {change && (
-//           <p className="admin-stat-change" style={{ color: change > 0 ? '#10b981' : '#ef4444' }}>
-//             {change > 0 ? '+' : ''}{change}% from last {timeframe}
-//           </p>
-//         )}
-//       </div>
-//     </motion.div>
-//   );
+  const statCards = [
+    {
+      title: 'Total Users',
+      value: stats.totalUsers,
+      icon: Users,
+      color: '#4361ee',
+      bgColor: 'rgba(67, 97, 238, 0.1)',
+      change: '+12%'
+    },
+    {
+      title: 'Total Expenses',
+      value: `$${stats.totalExpenses.toLocaleString()}`,
+      icon: DollarSign,
+      color: '#f59e0b',
+      bgColor: 'rgba(245, 158, 11, 0.1)',
+      change: '+23%'
+    },
+    {
+      title: 'Pending Approvals',
+      value: stats.pendingApprovals,
+      icon: Clock,
+      color: '#ef4444',
+      bgColor: 'rgba(239, 68, 68, 0.1)',
+      change: '-5%'
+    },
+    {
+      title: 'Monthly Spend',
+      value: `$${stats.monthlySpend.toLocaleString()}`,
+      icon: TrendingUp,
+      color: '#10b981',
+      bgColor: 'rgba(16, 185, 129, 0.1)',
+      change: '+8%'
+    }
+  ];
 
-//   if (loading) {
-//     return (
-//       <div className="loading-container">
-//         <div className="loading-spinner" />
-//         <p>Loading admin dashboard...</p>
-//       </div>
-//     );
-//   }
+  if (loading) {
+    return (
+      <div className="dashboard-loading">
+        <div className="spinner"></div>
+        <p>Loading dashboard data...</p>
+      </div>
+    );
+  }
 
-//   return (
-//     <div className="admin-dashboard">
-//       {/* Header */}
-//       <div className="admin-header">
-//         <div>
-//           <h1 className="admin-title">
-//             Welcome back, {user?.full_name || 'Admin'}!
-//           </h1>
-//           <p className="admin-subtitle">
-//             Here's what's happening with your organization today.
-//           </p>
-//         </div>
-        
-//         <div className="admin-header-actions">
-//           <select 
-//             className="admin-timeframe"
-//             value={timeframe}
-//             onChange={(e) => setTimeframe(e.target.value)}
-//           >
-//             <option value="week">This Week</option>
-//             <option value="month">This Month</option>
-//             <option value="quarter">This Quarter</option>
-//             <option value="year">This Year</option>
-//           </select>
-          
-//           <button className="admin-export-btn">
-//             <Download size={18} />
-//             Export Report
-//           </button>
-//         </div>
-//       </div>
+  return (
+    <motion.div 
+      className="admin-dashboard"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Header */}
+      <div className="dashboard-header">
+        <div>
+          <h1 className="dashboard-title">Admin Dashboard</h1>
+          <p className="dashboard-subtitle">
+            Welcome back, {user?.first_name || 'Admin'}! Here's what's happening with your platform.
+          </p>
+        </div>
+        <div className="dashboard-actions">
+          <select 
+            className="dashboard-date-filter"
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+          >
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="quarter">This Quarter</option>
+            <option value="year">This Year</option>
+          </select>
+          <motion.button 
+            className="dashboard-export-btn"
+            onClick={handleExport}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Download size={18} />
+            Export Report
+          </motion.button>
+        </div>
+      </div>
 
-//       {/* Stats Grid */}
-//       <div className="admin-stats-grid">
-//         <StatCard 
-//           icon={Users}
-//           title="Total Users"
-//           value={stats.totalUsers}
-//           change={12}
-//           color="#3b82f6"
-//         />
-//         <StatCard 
-//           icon={DollarSign}
-//           title="Total Expenses"
-//           value={`€${stats.totalAmount.toLocaleString()}`}
-//           change={8}
-//           color="#10b981"
-//         />
-//         <StatCard 
-//           icon={TrendingUp}
-//           title="Pending Approvals"
-//           value={stats.pendingApprovals}
-//           change={-5}
-//           color="#f59e0b"
-//         />
-//         <StatCard 
-//           icon={Building2}
-//           title="Active Teams"
-//           value={stats.activeTeams}
-//           change={0}
-//           color="#8b5cf6"
-//         />
-//       </div>
+      {/* Stats Grid */}
+      <div className="stats-grid">
+        {statCards.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <motion.div
+              key={stat.title}
+              className="stat-card"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ y: -5 }}
+            >
+              <div className="stat-icon" style={{ backgroundColor: stat.bgColor, color: stat.color }}>
+                <Icon size={24} />
+              </div>
+              <div className="stat-content">
+                <h3 className="stat-title">{stat.title}</h3>
+                <div className="stat-value">{stat.value}</div>
+                <div className="stat-change" style={{ color: stat.change.startsWith('+') ? '#10b981' : '#ef4444' }}>
+                  {stat.change} from last period
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
 
-//       {/* Charts Section */}
-//       <div className="admin-charts">
-//         <div className="admin-chart-card">
-//           <div className="admin-chart-header">
-//             <h3>Expense Trends</h3>
-//             <BarChart3 size={20} />
-//           </div>
-//           <div className="admin-chart-placeholder">
-//             <p>Chart visualization would go here</p>
-//           </div>
-//         </div>
+      {/* Main Content Grid */}
+      <div className="dashboard-grid">
+        {/* Pending Approvals */}
+        <motion.div 
+          className="dashboard-card"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="card-header">
+            <h2 className="card-title">
+              <Clock size={20} />
+              Pending Approvals
+            </h2>
+            <button className="card-action">
+              <Filter size={18} />
+            </button>
+          </div>
+          <div className="pending-list">
+            {pendingApprovals.length > 0 ? (
+              pendingApprovals.map((item, index) => (
+                <motion.div 
+                  key={item.id}
+                  className="pending-item"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <div className="pending-info">
+                    <h4>{item.title}</h4>
+                    <p>{item.user} • ${item.amount}</p>
+                    <span className="pending-date">{item.date}</span>
+                  </div>
+                  <div className="pending-actions">
+                    <motion.button 
+                      className="pending-approve"
+                      onClick={() => handleApprove(item.id, item.type)}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      title="Approve"
+                    >
+                      <CheckCircle size={18} />
+                    </motion.button>
+                    <motion.button 
+                      className="pending-reject"
+                      onClick={() => handleReject(item.id, item.type)}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      title="Reject"
+                    >
+                      <XCircle size={18} />
+                    </motion.button>
+                    <motion.button 
+                      className="pending-more"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      title="More options"
+                    >
+                      <MoreVertical size={18} />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="empty-state">
+                <CheckCircle size={48} className="empty-icon" />
+                <p>No pending approvals</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
 
-//         <div className="admin-chart-card">
-//           <div className="admin-chart-header">
-//             <h3>Category Distribution</h3>
-//             <PieChart size={20} />
-//           </div>
-//           <div className="admin-chart-placeholder">
-//             <p>Pie chart would go here</p>
-//           </div>
-//         </div>
-//       </div>
+        {/* Recent Activities */}
+        <motion.div 
+          className="dashboard-card"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="card-header">
+            <h2 className="card-title">
+              <Activity size={20} />
+              Recent Activities
+            </h2>
+          </div>
+          <div className="activities-list">
+            {recentActivities.length > 0 ? (
+              recentActivities.map((activity, index) => (
+                <motion.div 
+                  key={activity.id}
+                  className="activity-item"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <div className={`activity-icon ${activity.type}`}>
+                    {activity.type === 'expense' && <DollarSign size={16} />}
+                    {activity.type === 'user' && <Users size={16} />}
+                    {activity.type === 'approval' && <CheckCircle size={16} />}
+                  </div>
+                  <div className="activity-content">
+                    <p className="activity-text">{activity.text}</p>
+                    <span className="activity-time">{activity.time}</span>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="empty-state">
+                <Activity size={48} className="empty-icon" />
+                <p>No recent activities</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
 
-//       {/* Recent Activity */}
-//       <div className="admin-activity-grid">
-//         {/* Recent Users */}
-//         <div className="admin-card">
-//           <div className="admin-card-header">
-//             <h3>Recent Users</h3>
-//             <button className="admin-view-all">
-//               View All <ChevronRight size={16} />
-//             </button>
-//           </div>
-          
-//           <div className="admin-user-list">
-//             {recentUsers.map((employee, index) => (
-//               <motion.div 
-//                 key={employee.id}
-//                 className="admin-user-item"
-//                 initial={{ opacity: 0, x: -20 }}
-//                 animate={{ opacity: 1, x: 0 }}
-//                 transition={{ delay: index * 0.1 }}
-//               >
-//                 <div className="admin-user-avatar">
-//                   {employee.user?.first_name?.charAt(0) || 'U'}
-//                   {employee.user?.last_name?.charAt(0) || ''}
-//                 </div>
-//                 <div className="admin-user-info">
-//                   <h4>{employee.full_name}</h4>
-//                   <p>{employee.department} • {employee.role}</p>
-//                 </div>
-//                 <div className="admin-user-status">
-//                   <span className="status-dot active" />
-//                   Active
-//                 </div>
-//               </motion.div>
-//             ))}
-//           </div>
-          
-//           <button className="admin-add-user">
-//             <UserPlus size={16} />
-//             Add New User
-//           </button>
-//         </div>
+        {/* User Activity Map */}
+        <motion.div 
+          className="dashboard-card dashboard-card-full"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <div className="card-header">
+            <h2 className="card-title">
+              <MapPin size={20} />
+              User Activity Map
+            </h2>
+            <div className="user-stats">
+              <div className="user-stat">
+                <Mail size={16} />
+                <span>128 active</span>
+              </div>
+              <div className="user-stat">
+                <Phone size={16} />
+                <span>24 calls</span>
+              </div>
+              <div className="user-stat">
+                <Award size={16} />
+                <span>12 new</span>
+              </div>
+            </div>
+          </div>
+          <div className="map-placeholder">
+            <div className="map-grid">
+              {[...Array(20)].map((_, i) => (
+                <div key={i} className="map-dot" />
+              ))}
+            </div>
+            <p className="map-text">Interactive map will be displayed here</p>
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
 
-//         {/* Recent Expenses */}
-//         <div className="admin-card">
-//           <div className="admin-card-header">
-//             <h3>Recent Expenses</h3>
-//             <button className="admin-view-all">
-//               View All <ChevronRight size={16} />
-//             </button>
-//           </div>
-          
-//           <div className="admin-expense-list">
-//             {recentExpenses.map((expense, index) => (
-//               <motion.div 
-//                 key={expense.id}
-//                 className="admin-expense-item"
-//                 initial={{ opacity: 0, x: -20 }}
-//                 animate={{ opacity: 1, x: 0 }}
-//                 transition={{ delay: index * 0.1 }}
-//               >
-//                 <div className="admin-expense-info">
-//                   <h4>{expense.subject}</h4>
-//                   <p>{expense.employee_name} • {expense.team_name}</p>
-//                 </div>
-//                 <div className="admin-expense-amount">
-//                   €{expense.amount?.toFixed(2)}
-//                 </div>
-//                 <div className={`admin-expense-status ${expense.status}`}>
-//                   {expense.status}
-//                 </div>
-//               </motion.div>
-//             ))}
-//           </div>
-//         </div>
-
-//         {/* Quick Actions */}
-//         <div className="admin-card">
-//           <div className="admin-card-header">
-//             <h3>Quick Actions</h3>
-//             <Settings size={16} />
-//           </div>
-          
-//           <div className="admin-quick-actions">
-//             <button className="admin-action-btn">
-//               <UserPlus size={18} />
-//               Invite Users
-//             </button>
-//             <button className="admin-action-btn">
-//               <Building2 size={18} />
-//               Manage Teams
-//             </button>
-//             <button className="admin-action-btn">
-//               <DollarSign size={18} />
-//               Set Budgets
-//             </button>
-//             <button className="admin-action-btn">
-//               <Calendar size={18} />
-//               Schedule Review
-//             </button>
-//             <button className="admin-action-btn">
-//               <Download size={18} />
-//               Generate Report
-//             </button>
-//             <button className="admin-action-btn">
-//               <Settings size={18} />
-//               System Settings
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default AdminDashboard;
+export default AdminDashboard;

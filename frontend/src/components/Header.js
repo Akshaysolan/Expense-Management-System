@@ -1,3 +1,4 @@
+// frontend/src/components/Header.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,13 +20,17 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 
-
 function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+
+  // Debug log to see exact user data structure
+  console.log('👤 Full user object:', JSON.stringify(user, null, 2));
+  console.log('👤 User role value:', user?.role);
+  console.log('👤 User role type:', typeof user?.role);
 
   const notifications = [
     { id: 1, title: 'New expense approval', time: '5 min ago', read: false, icon: '💰' },
@@ -35,6 +40,56 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
   ];
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Format role for display - preserve the actual role value
+  const formatRole = (role) => {
+    if (!role) return 'Employee';
+    
+    // Convert to string and trim
+    const roleStr = String(role).trim();
+    
+    // Capitalize first letter, keep the rest as is
+    return roleStr.charAt(0).toUpperCase() + roleStr.slice(1).toLowerCase();
+  };
+
+  // Get user's full name
+  const getUserFullName = () => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    } else if (user?.first_name) {
+      return user.first_name;
+    } else if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
+
+  // Get user's display name (first name only for header)
+  const getUserDisplayName = () => {
+    if (user?.first_name) {
+      return user.first_name;
+    } else if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
+
+  // Get user's initials for avatar
+  const getUserInitials = () => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`;
+    } else if (user?.first_name) {
+      return user.first_name.charAt(0);
+    } else if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
+
+  // If user is not loaded yet, don't render
+  if (!user) {
+    return null;
+  }
 
   return (
     <motion.header 
@@ -47,7 +102,6 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
 
         {/* ── Sidebar Toggle Button ── */}
         {isMobile ? (
-          /* Mobile: hamburger opens the drawer */
           <motion.button
             className="header-sidebar-toggle"
             onClick={toggleMobileSidebar}
@@ -58,7 +112,6 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
             <Menu size={20} />
           </motion.button>
         ) : (
-          /* Desktop: chevron collapses / expands sidebar */
           <motion.button
             className="header-sidebar-toggle"
             onClick={toggleSidebar}
@@ -194,17 +247,25 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
           >
             <div className="header-user-avatar">
               {user?.avatar ? (
-                <img src={user.avatar} alt={user.name} />
+                <img src={user.avatar} alt={getUserFullName()} />
               ) : (
                 <div className="header-avatar-placeholder">
-                  {user?.name?.charAt(0) || 'J'}
+                  {getUserInitials()}
                 </div>
               )}
               <span className="header-online-indicator"></span>
             </div>
             <div className="header-user-info">
-              <span className="header-user-name">{user?.name || 'Janice'}</span>
-              <span className="header-user-role">{user?.role || 'Admin'}</span>
+              <span className="header-user-name">
+                {getUserDisplayName()}
+              </span>
+              <span className="header-user-role">
+                {/* Directly use the role without formatting first to debug */}
+                {user?.role === 'manager' ? 'Manager' : 
+                 user?.role === 'employee' ? 'Employee' : 
+                 user?.role === 'admin' ? 'Admin' : 
+                 formatRole(user?.role)}
+              </span>
             </div>
             <ChevronDown size={16} className={`header-dropdown-arrow ${showUserMenu ? 'header-arrow-rotated' : ''}`} />
           </motion.button>
@@ -221,21 +282,29 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
                 <div className="header-dropdown-user-info">
                   <div className="header-dropdown-avatar">
                     {user?.avatar ? (
-                      <img src={user.avatar} alt={user.name} />
+                      <img src={user.avatar} alt={getUserFullName()} />
                     ) : (
                       <div className="header-avatar-placeholder header-avatar-large">
-                        {user?.name?.charAt(0) || 'J'}
+                        {getUserInitials()}
                       </div>
                     )}
                   </div>
                   <div className="header-dropdown-user-details">
-                    <h4>{user?.name || 'Janice Chandler'}</h4>
-                    <p>{user?.email || 'janice@company.com'}</p>
+                    <h4>{getUserFullName()}</h4>
+                    <p>{user?.email || ''}</p>
+                    <p className="header-dropdown-user-role">
+                      <span className="role-badge">
+                        {user?.role === 'manager' ? 'Manager' : 
+                         user?.role === 'employee' ? 'Employee' : 
+                         user?.role === 'admin' ? 'Admin' : 
+                         formatRole(user?.role)}
+                      </span>
+                    </p>
                   </div>
                 </div>
 
                 <div className="header-dropdown-menu-items">
-                  <Link to="/profile/:userId" className="header-menu-item" onClick={() => setShowUserMenu(false)}>
+                  <Link to={`/profile/${user?.id}`} className="header-menu-item" onClick={() => setShowUserMenu(false)}>
                     <User size={16} />
                     <span>My Profile</span>
                   </Link>

@@ -90,11 +90,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS settings
+# ========== CORS SETTINGS ==========
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-# REST Framework settings
+# ========== REST FRAMEWORK SETTINGS ==========
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -107,7 +107,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-# JWT settings
+# ========== JWT SETTINGS ==========
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
@@ -123,3 +123,16 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
+
+# ========== EMAIL SETTINGS ==========
+# Development email backend (prints to console)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Production email settings (commented out)
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your-email@gmail.com'
+# EMAIL_HOST_PASSWORD = 'your-password'
+DEFAULT_FROM_EMAIL = 'support@expensepro.com'

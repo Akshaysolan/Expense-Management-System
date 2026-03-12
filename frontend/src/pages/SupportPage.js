@@ -7,6 +7,121 @@ import {
   Search, ExternalLink, Clock, ArrowRight, X, Zap
 } from 'lucide-react';
 
+// API Configuration
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+
+// API Functions
+const api = {
+  // Get FAQs
+  getFAQs: async () => {
+    const response = await fetch(`${API_BASE_URL}/faqs/`);
+    if (!response.ok) throw new Error('Failed to fetch FAQs');
+    return response.json();
+  },
+
+  // Get Documents
+  getDocuments: async () => {
+    const response = await fetch(`${API_BASE_URL}/documents/`);
+    if (!response.ok) throw new Error('Failed to fetch documents');
+    return response.json();
+  },
+
+  // Get Support Stats
+  getStats: async () => {
+    const response = await fetch(`${API_BASE_URL}/stats/`);
+    if (!response.ok) throw new Error('Failed to fetch stats');
+    return response.json();
+  },
+
+  // Submit Support Ticket
+  submitTicket: async (ticketData) => {
+    const response = await fetch(`${API_BASE_URL}/tickets/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ticketData)
+    });
+    if (!response.ok) throw new Error('Failed to submit ticket');
+    return response.json();
+  },
+
+  // Create Chat Session
+  createChatSession: async (userData) => {
+    const response = await fetch(`${API_BASE_URL}/chat/sessions/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    });
+    if (!response.ok) throw new Error('Failed to create chat session');
+    return response.json();
+  },
+
+  // Send Chat Message
+  sendChatMessage: async (sessionId, message) => {
+    const response = await fetch(`${API_BASE_URL}/chat/sessions/${sessionId}/send/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+    if (!response.ok) throw new Error('Failed to send message');
+    return response.json();
+  },
+
+  // Get Chat Messages
+  getChatMessages: async (sessionId) => {
+    const response = await fetch(`${API_BASE_URL}/chat/sessions/${sessionId}/messages/`);
+    if (!response.ok) throw new Error('Failed to get messages');
+    return response.json();
+  },
+
+  // Close Chat Session
+  closeChatSession: async (sessionId) => {
+    const response = await fetch(`${API_BASE_URL}/chat/sessions/${sessionId}/close/`, {
+      method: 'POST'
+    });
+    if (!response.ok) throw new Error('Failed to close chat');
+    return response.json();
+  },
+
+  // Submit FAQ Feedback
+  submitFAQFeedback: async (faqId, isHelpful) => {
+    const response = await fetch(`${API_BASE_URL}/faq/feedback/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ faq: faqId, is_helpful: isHelpful })
+    });
+    if (!response.ok) throw new Error('Failed to submit feedback');
+    return response.json();
+  },
+
+  // Book Video Call
+  bookVideoCall: async (bookingData) => {
+    const response = await fetch(`${API_BASE_URL}/video/book/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bookingData)
+    });
+    if (!response.ok) throw new Error('Failed to book video call');
+    return response.json();
+  },
+
+  // Get Real-time Stats
+  getRealtimeStats: async () => {
+    const response = await fetch(`${API_BASE_URL}/stats/realtime/`);
+    if (!response.ok) throw new Error('Failed to fetch realtime stats');
+    return response.json();
+  },
+
+  // Subscribe to Updates
+  subscribeToUpdates: async (email) => {
+    const response = await fetch(`${API_BASE_URL}/subscribe/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (!response.ok) throw new Error('Failed to subscribe');
+    return response.json();
+  }
+};
 
 // ── Animated counter for stat numbers ──────────────────────
 function AnimatedStat({ value, suffix = '' }) {
@@ -47,86 +162,43 @@ function Toast({ message, type, onClose }) {
   );
 }
 
-// ── Data ────────────────────────────────────────────────────
-const FAQS = [
-  {
-    question: 'How do I submit an expense report?',
-    answer: 'Navigate to the Expenses page and click "Add Expense". Fill in the required details — amount, category, date, and description — then attach a receipt photo if required. Submit for manager approval. You can track status under My Expenses.',
-    tag: 'Expenses'
-  },
-  {
-    question: 'How are approvals processed?',
-    answer: 'Once submitted, expense and trip requests route to your direct manager. Managers receive in-app notifications and email alerts. You can monitor live status in the Approvals page. Approved expenses are reimbursed in the next payroll cycle.',
-    tag: 'Approvals'
-  },
-  {
-    question: 'Can I export my expense data?',
-    answer: 'Yes. On the Expenses page, click the Export button and choose CSV or Excel format. You can also generate formatted PDF reports from the Reports page, filtered by date range, category, or status.',
-    tag: 'Reports'
-  },
-  {
-    question: 'How do I create a trip request?',
-    answer: 'Go to the Trips page and click "New Trip". Enter your destination, travel dates, purpose, and estimated expenses. Once submitted, your manager will review and approve it. You can then log expenses directly against the approved trip.',
-    tag: 'Trips'
-  },
-  {
-    question: 'What happens to unreported expenses?',
-    answer: 'Unreported expenses appear as pending tasks on your dashboard. You should submit them within 30 days to ensure timely reimbursement. Expenses older than 90 days may require additional documentation and manager sign-off.',
-    tag: 'Expenses'
-  },
-  {
-    question: 'How do I change my password or update my profile?',
-    answer: 'Click your avatar in the top-right corner and select Profile, or go to Settings → Account. From there you can update your name, contact info, department, and change your password. Changes take effect immediately.',
-    tag: 'Account'
-  },
-  {
-    question: 'Why was my expense rejected?',
-    answer: 'Rejections include a reason from your manager, visible in the Approvals page and your notification feed. Common reasons include missing receipts, policy limit exceeded, or incorrect category. You can edit and resubmit directly from the expense detail page.',
-    tag: 'Approvals'
-  },
-  {
-    question: 'Is there a mobile app available?',
-    answer: 'ExpensePro is fully responsive and works on any mobile browser. A dedicated iOS and Android app is on our roadmap — subscribe to our changelog to be notified on launch.',
-    tag: 'General'
-  }
-];
-
-const DOCS = [
-  { title: 'Getting Started Guide',      icon: '🚀', desc: 'Set up your account and submit your first expense', href: '#' },
-  { title: 'Expense Policy Overview',    icon: '📋', desc: 'Understand company spending limits and categories',  href: '#' },
-  { title: 'Trip & Travel Handbook',     icon: '✈️', desc: 'Everything about booking trips and travel expenses',  href: '#' },
-  { title: 'Approval Workflow Guide',    icon: '✅', desc: 'How approvals work for managers and finance teams',   href: '#' },
-  { title: 'Reports & Analytics Manual', icon: '📊', desc: 'Generate and interpret expense reports',              href: '#' },
-  { title: 'Admin Configuration Guide',  icon: '⚙️', desc: 'Setting up teams, categories, and policy rules',      href: '#' },
-];
-
-const STATS = [
-  { value: '98',  suffix: '%',  label: 'Satisfaction rate' },
-  { value: '2',   suffix: 'h',  label: 'Avg. response time' },
-  { value: '24',  suffix: '/7', label: 'Live chat available' },
-  { value: '50',  suffix: 'k+', label: 'Issues resolved' },
-];
-
 // ── Main Component ──────────────────────────────────────────
 function SupportPage() {
+  // State for data from API
+  const [faqs, setFaqs] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [loading, setLoading] = useState({
+    faqs: true,
+    documents: true,
+    stats: true
+  });
+  const [error, setError] = useState(null);
+
   // FAQ
-  const [activeFaq, setActiveFaq]       = useState(null);
-  const [faqSearch,  setFaqSearch]      = useState('');
-  const [faqFilter,  setFaqFilter]      = useState('All');
+  const [activeFaq, setActiveFaq] = useState(null);
+  const [faqSearch, setFaqSearch] = useState('');
+  const [faqFilter, setFaqFilter] = useState('All');
 
   // Contact form
-  const [contactForm, setContactForm]   = useState({ name: '', email: '', subject: '', message: '', priority: 'normal' });
-  const [formLoading,  setFormLoading]  = useState(false);
-  const [formSuccess,  setFormSuccess]  = useState(false);
-  const [formErrors,   setFormErrors]   = useState({});
+  const [contactForm, setContactForm] = useState({ 
+    name: '', 
+    email: '', 
+    subject: '', 
+    message: '', 
+    priority: 'normal' 
+  });
+  const [formLoading, setFormLoading] = useState(false);
+  const [formSuccess, setFormSuccess] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
-  // Live chat mock
-  const [chatOpen,   setChatOpen]       = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { from: 'agent', text: 'Hi! I\'m Maya from ExpensePro support. How can I help you today?', time: 'now' }
-  ]);
-  const [chatInput,  setChatInput]      = useState('');
-  const [chatTyping, setChatTyping]     = useState(false);
+  // Live chat
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatSession, setChatSession] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatTyping, setChatTyping] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef(null);
 
   // Toast
@@ -135,15 +207,40 @@ function SupportPage() {
   // Active section (for smooth nav)
   const [activeSection, setActiveSection] = useState('cards');
 
+  // Load initial data
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    try {
+      // Load all data in parallel
+      const [faqsData, docsData, statsData] = await Promise.all([
+        api.getFAQs(),
+        api.getDocuments(),
+        api.getStats()
+      ]);
+
+      setFaqs(faqsData);
+      setDocuments(docsData);
+      setStats(statsData);
+    } catch (err) {
+      setError(err.message);
+      setToast({ type: 'error', message: 'Failed to load support data' });
+    } finally {
+      setLoading({ faqs: false, documents: false, stats: false });
+    }
+  };
+
   // ── scroll chat to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
   // ── FAQ filtering
-  const faqTags = ['All', ...new Set(FAQS.map(f => f.tag))];
+  const faqTags = ['All', ...new Set(faqs.map(f => f.tag))];
 
-  const filteredFaqs = FAQS.filter(f => {
+  const filteredFaqs = faqs.filter(f => {
     const matchesSearch = faqSearch === '' ||
       f.question.toLowerCase().includes(faqSearch.toLowerCase()) ||
       f.answer.toLowerCase().includes(faqSearch.toLowerCase());
@@ -154,11 +251,11 @@ function SupportPage() {
   // ── Form validation
   const validateForm = () => {
     const errors = {};
-    if (!contactForm.name.trim())         errors.name    = 'Name is required';
-    if (!contactForm.email.trim())        errors.email   = 'Email is required';
+    if (!contactForm.name.trim()) errors.name = 'Name is required';
+    if (!contactForm.email.trim()) errors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(contactForm.email)) errors.email = 'Invalid email address';
-    if (!contactForm.subject.trim())      errors.subject = 'Subject is required';
-    if (!contactForm.message.trim())      errors.message = 'Message is required';
+    if (!contactForm.subject.trim()) errors.subject = 'Subject is required';
+    if (!contactForm.message.trim()) errors.message = 'Message is required';
     else if (contactForm.message.length < 20) errors.message = 'Message must be at least 20 characters';
     return errors;
   };
@@ -172,43 +269,144 @@ function SupportPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm();
-    if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+    if (Object.keys(errors).length > 0) { 
+      setFormErrors(errors); 
+      return;
+    }
 
     setFormLoading(true);
-    // Simulate API call
-    await new Promise(r => setTimeout(r, 1800));
-    setFormLoading(false);
-    setFormSuccess(true);
-    setContactForm({ name: '', email: '', subject: '', message: '', priority: 'normal' });
-    setToast({ type: 'success', message: 'Message sent! We\'ll respond within 24 hours.' });
-    setTimeout(() => setFormSuccess(false), 5000);
+    try {
+      const ticket = await api.submitTicket(contactForm);
+      setFormSuccess(true);
+      setContactForm({ name: '', email: '', subject: '', message: '', priority: 'normal' });
+      setToast({ type: 'success', message: `Ticket #${ticket.ticket_id} created! We'll respond within 24 hours.` });
+      setTimeout(() => setFormSuccess(false), 5000);
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to submit ticket. Please try again.' });
+    } finally {
+      setFormLoading(false);
+    }
   };
 
-  // ── Chat
-  const agentReplies = [
-    'Got it! Let me look into that for you.',
-    'Great question. You can find that option under Settings → Expenses.',
-    'I can see your account details. Give me a moment to check.',
-    'That\'s a known issue we\'re working on. Expected fix is in the next release.',
-    'Would you like me to escalate this to our technical team?',
-    'Done! I\'ve updated your account settings.',
-  ];
+  // ── Chat Functions
+  const startChat = async () => {
+    setChatLoading(true);
+    try {
+      const session = await api.createChatSession({
+        name: 'Guest User', // In production, get from user context
+        email: 'guest@example.com'
+      });
+      setChatSession(session);
+      setChatMessages(session.messages || []);
+      setChatOpen(true);
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to start chat. Please try again.' });
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
-  const sendChatMessage = () => {
-    if (!chatInput.trim()) return;
-    const userMsg = { from: 'user', text: chatInput.trim(), time: 'now' };
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || !chatSession) return;
+    
+    const userMsg = { 
+      from: 'user', 
+      text: chatInput.trim(), 
+      time: 'now',
+      sender_type: 'user',
+      message: chatInput.trim()
+    };
+    
     setChatMessages(prev => [...prev, userMsg]);
     setChatInput('');
     setChatTyping(true);
-    setTimeout(() => {
-      const reply = agentReplies[Math.floor(Math.random() * agentReplies.length)];
-      setChatMessages(prev => [...prev, { from: 'agent', text: reply, time: 'now' }]);
+
+    try {
+      // Send message to backend
+      await api.sendChatMessage(chatSession.session_id, chatInput.trim());
+      
+      // Simulate agent response (in production, this would come from WebSocket)
+      setTimeout(async () => {
+        const agentResponses = [
+          "Got it! Let me look into that for you.",
+          "Great question. You can find that option under Settings → Expenses.",
+          "I can see your account details. Give me a moment to check.",
+          "That's a known issue we're working on. Expected fix is in the next release.",
+          "Would you like me to escalate this to our technical team?",
+          "Done! I've updated your account settings."
+        ];
+        
+        const reply = agentResponses[Math.floor(Math.random() * agentResponses.length)];
+        const agentMsg = { 
+          from: 'agent', 
+          text: reply, 
+          time: 'now',
+          sender_type: 'agent',
+          message: reply
+        };
+        
+        setChatMessages(prev => [...prev, agentMsg]);
+        setChatTyping(false);
+      }, 1400);
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to send message.' });
       setChatTyping(false);
-    }, 1400);
+    }
   };
 
   const handleChatKey = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+    if (e.key === 'Enter' && !e.shiftKey) { 
+      e.preventDefault(); 
+      sendChatMessage(); 
+    }
+  };
+
+  const closeChat = async () => {
+    if (chatSession) {
+      try {
+        await api.closeChatSession(chatSession.session_id);
+      } catch (err) {
+        console.error('Failed to close chat properly:', err);
+      }
+    }
+    setChatOpen(false);
+    setChatSession(null);
+    setChatMessages([]);
+  };
+
+  const handleFaqFeedback = async (faqId, isHelpful) => {
+    try {
+      await api.submitFAQFeedback(faqId, isHelpful);
+      setToast({ type: 'success', message: 'Thanks for your feedback!' });
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to submit feedback.' });
+    }
+  };
+
+  const handleVideoBooking = async () => {
+    try {
+      // In production, show a modal to collect booking details
+      const bookingData = {
+        name: 'John Doe',
+        email: 'john@example.com',
+        preferred_date: '2024-01-20',
+        preferred_time: '14:00',
+        topic: 'Technical support needed'
+      };
+      const booking = await api.bookVideoCall(bookingData);
+      setToast({ type: 'success', message: `Video call booked! Confirmation: ${booking.booking_id}` });
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to book video call.' });
+    }
+  };
+
+  const handleSubscribe = async (email) => {
+    try {
+      await api.subscribeToUpdates(email);
+      setToast({ type: 'success', message: 'Successfully subscribed to updates!' });
+    } catch (err) {
+      setToast({ type: 'error', message: 'Failed to subscribe.' });
+    }
   };
 
   // ── Scroll to section
@@ -226,6 +424,19 @@ function SupportPage() {
     hidden: { opacity: 0, y: 20 },
     show:   { opacity: 1, y: 0, transition: { duration: 0.4 } }
   };
+
+  if (error && !faqs.length) {
+    return (
+      <div className="sp-error-state">
+        <AlertCircle size={48} />
+        <h2>Failed to load support content</h2>
+        <p>{error}</p>
+        <button onClick={loadInitialData} className="sp-btn-primary">
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="sp-page">
@@ -308,7 +519,7 @@ function SupportPage() {
             title: 'Live Chat',
             desc: 'Chat with a human agent, 24/7',
             action: 'Start Chat',
-            onClick: () => setChatOpen(true)
+            onClick: startChat
           },
           {
             icon: <Mail size={26} />,
@@ -332,7 +543,7 @@ function SupportPage() {
             title: 'Video Call',
             desc: 'Book a screen-share session',
             action: 'Book Now',
-            onClick: () => setToast({ type: 'success', message: 'Booking link sent to your email!' })
+            onClick: handleVideoBooking
           },
         ].map((card, i) => (
           <motion.div
@@ -347,8 +558,9 @@ function SupportPage() {
             </div>
             <h3 className="sp-card__title">{card.title}</h3>
             <p  className="sp-card__desc">{card.desc}</p>
-            <button className="sp-card__btn" onClick={card.onClick}>
-              {card.action} <ArrowRight size={14} />
+            <button className="sp-card__btn" onClick={card.onClick} disabled={card.loading}>
+              {card.loading ? <Loader size={14} className="sp-spinner" /> : card.action}
+              {!card.loading && <ArrowRight size={14} />}
             </button>
           </motion.div>
         ))}
@@ -363,14 +575,18 @@ function SupportPage() {
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        {STATS.map((s, i) => (
-          <div key={i} className="sp-stat">
-            <span className="sp-stat__value">
-              <AnimatedStat value={s.value} suffix={s.suffix} />
-            </span>
-            <span className="sp-stat__label">{s.label}</span>
-          </div>
-        ))}
+        {loading.stats ? (
+          <div className="sp-loading">Loading stats...</div>
+        ) : (
+          stats.map((s, i) => (
+            <div key={i} className="sp-stat">
+              <span className="sp-stat__value">
+                <AnimatedStat value={s.value} suffix={s.suffix} />
+              </span>
+              <span className="sp-stat__label">{s.label}</span>
+            </div>
+          ))
+        )}
       </motion.div>
 
       {/* ── FAQ ──────────────────────────────────────────── */}
@@ -413,70 +629,78 @@ function SupportPage() {
 
         {/* FAQ list */}
         <div className="sp-faq-list">
-          <AnimatePresence>
-            {filteredFaqs.length === 0 ? (
-              <motion.div
-                className="sp-empty"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              >
-                <HelpCircle size={32} />
-                <p>No FAQs match your search. Try different keywords.</p>
-              </motion.div>
-            ) : (
-              filteredFaqs.map((faq, index) => (
+          {loading.faqs ? (
+            <div className="sp-loading">Loading FAQs...</div>
+          ) : (
+            <AnimatePresence>
+              {filteredFaqs.length === 0 ? (
                 <motion.div
-                  key={index}
-                  className={`sp-faq-item ${activeFaq === index ? 'open' : ''}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.04 }}
+                  className="sp-empty"
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }}
                 >
-                  <button
-                    className="sp-faq-q"
-                    onClick={() => setActiveFaq(activeFaq === index ? null : index)}
-                    aria-expanded={activeFaq === index}
-                  >
-                    <span className="sp-faq-q__tag">{faq.tag}</span>
-                    <span className="sp-faq-q__text">{faq.question}</span>
-                    <motion.span
-                      className="sp-faq-q__chevron"
-                      animate={{ rotate: activeFaq === index ? 180 : 0 }}
-                      transition={{ duration: 0.25 }}
-                    >
-                      <ChevronDown size={18} />
-                    </motion.span>
-                  </button>
-
-                  <AnimatePresence>
-                    {activeFaq === index && (
-                      <motion.div
-                        className="sp-faq-a"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{   height: 0, opacity: 0 }}
-                        transition={{ duration: 0.28, ease: 'easeInOut' }}
-                      >
-                        <div className="sp-faq-a__inner">
-                          <p>{faq.answer}</p>
-                          <div className="sp-faq-a__actions">
-                            <span className="sp-faq-a__helpful">Was this helpful?</span>
-                            <button
-                              className="sp-faq-a__vote"
-                              onClick={() => setToast({ type: 'success', message: 'Thanks for your feedback!' })}
-                            >👍 Yes</button>
-                            <button
-                              className="sp-faq-a__vote"
-                              onClick={() => scrollTo('contact')}
-                            >👎 No — contact us</button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <HelpCircle size={32} />
+                  <p>No FAQs match your search. Try different keywords.</p>
                 </motion.div>
-              ))
-            )}
-          </AnimatePresence>
+              ) : (
+                filteredFaqs.map((faq, index) => (
+                  <motion.div
+                    key={faq.id || index}
+                    className={`sp-faq-item ${activeFaq === index ? 'open' : ''}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.04 }}
+                  >
+                    <button
+                      className="sp-faq-q"
+                      onClick={() => setActiveFaq(activeFaq === index ? null : index)}
+                      aria-expanded={activeFaq === index}
+                    >
+                      <span className="sp-faq-q__tag">{faq.tag}</span>
+                      <span className="sp-faq-q__text">{faq.question}</span>
+                      <motion.span
+                        className="sp-faq-q__chevron"
+                        animate={{ rotate: activeFaq === index ? 180 : 0 }}
+                        transition={{ duration: 0.25 }}
+                      >
+                        <ChevronDown size={18} />
+                      </motion.span>
+                    </button>
+
+                    <AnimatePresence>
+                      {activeFaq === index && (
+                        <motion.div
+                          className="sp-faq-a"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{   height: 0, opacity: 0 }}
+                          transition={{ duration: 0.28, ease: 'easeInOut' }}
+                        >
+                          <div className="sp-faq-a__inner">
+                            <p>{faq.answer}</p>
+                            <div className="sp-faq-a__actions">
+                              <span className="sp-faq-a__helpful">Was this helpful?</span>
+                              <button
+                                className="sp-faq-a__vote"
+                                onClick={() => handleFaqFeedback(faq.id, true)}
+                              >👍 Yes</button>
+                              <button
+                                className="sp-faq-a__vote"
+                                onClick={() => {
+                                  handleFaqFeedback(faq.id, false);
+                                  scrollTo('contact');
+                                }}
+                              >👎 No — contact us</button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))
+              )}
+            </AnimatePresence>
+          )}
         </div>
       </section>
 
@@ -494,22 +718,28 @@ function SupportPage() {
           whileInView="show"
           viewport={{ once: true }}
         >
-          {DOCS.map((doc, i) => (
-            <motion.a
-              key={i}
-              href={doc.href}
-              className="sp-doc-card"
-              variants={fadeUp}
-              whileHover={{ y: -4 }}
-            >
-              <span className="sp-doc-card__emoji">{doc.icon}</span>
-              <div className="sp-doc-card__body">
-                <h4 className="sp-doc-card__title">{doc.title}</h4>
-                <p  className="sp-doc-card__desc">{doc.desc}</p>
-              </div>
-              <ExternalLink size={14} className="sp-doc-card__ext" />
-            </motion.a>
-          ))}
+          {loading.documents ? (
+            <div className="sp-loading">Loading documents...</div>
+          ) : (
+            documents.map((doc, i) => (
+              <motion.a
+                key={doc.id || i}
+                href={doc.external_url || '#'}
+                className="sp-doc-card"
+                variants={fadeUp}
+                whileHover={{ y: -4 }}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span className="sp-doc-card__emoji">{doc.icon}</span>
+                <div className="sp-doc-card__body">
+                  <h4 className="sp-doc-card__title">{doc.title}</h4>
+                  <p  className="sp-doc-card__desc">{doc.description}</p>
+                </div>
+                <ExternalLink size={14} className="sp-doc-card__ext" />
+              </motion.a>
+            ))
+          )}
         </motion.div>
       </section>
 
@@ -523,9 +753,31 @@ function SupportPage() {
         {/* Contact quick options */}
         <div className="sp-contact-opts">
           {[
-            { icon: <MessageSquare size={22} />, color: '#34d399', label: 'Live Chat', sub: '< 2 min wait',  action: 'Start Chat',   onClick: () => setChatOpen(true) },
-            { icon: <Phone size={22} />,         color: '#a78bfa', label: 'Phone',     sub: 'Mon–Fri 9–6 EST', action: 'Call Now', onClick: () => window.location.href = 'tel:+15551234567' },
-            { icon: <Video size={22} />,         color: '#fb923c', label: 'Video Call', sub: 'By appointment', action: 'Book',     onClick: () => setToast({ type: 'success', message: 'Booking link sent to your email!' }) },
+            { 
+              icon: <MessageSquare size={22} />, 
+              color: '#34d399', 
+              label: 'Live Chat', 
+              sub: '< 2 min wait',  
+              action: 'Start Chat',   
+              onClick: startChat,
+              loading: chatLoading
+            },
+            { 
+              icon: <Phone size={22} />,         
+              color: '#a78bfa', 
+              label: 'Phone',     
+              sub: 'Mon–Fri 9–6 EST', 
+              action: 'Call Now', 
+              onClick: () => window.location.href = 'tel:+15551234567' 
+            },
+            { 
+              icon: <Video size={22} />,         
+              color: '#fb923c', 
+              label: 'Video Call', 
+              sub: 'By appointment', 
+              action: 'Book',     
+              onClick: handleVideoBooking 
+            },
           ].map((opt, i) => (
             <motion.div
               key={i}
@@ -543,8 +795,12 @@ function SupportPage() {
                 <h4>{opt.label}</h4>
                 <p>{opt.sub}</p>
               </div>
-              <button className="sp-contact-opt__btn" onClick={opt.onClick}>
-                {opt.action}
+              <button 
+                className="sp-contact-opt__btn" 
+                onClick={opt.onClick}
+                disabled={opt.loading}
+              >
+                {opt.loading ? <Loader size={14} className="sp-spinner" /> : opt.action}
               </button>
             </motion.div>
           ))}
@@ -704,7 +960,7 @@ function SupportPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{   opacity: 0 }}
-              onClick={() => setChatOpen(false)}
+              onClick={closeChat}
             />
             <motion.div
               className="sp-chat"
@@ -724,7 +980,7 @@ function SupportPage() {
                     </p>
                   </div>
                 </div>
-                <button className="sp-chat__close" onClick={() => setChatOpen(false)}>
+                <button className="sp-chat__close" onClick={closeChat}>
                   <X size={18} />
                 </button>
               </div>
@@ -734,12 +990,12 @@ function SupportPage() {
                 {chatMessages.map((msg, i) => (
                   <motion.div
                     key={i}
-                    className={`sp-chat__msg sp-chat__msg--${msg.from}`}
+                    className={`sp-chat__msg sp-chat__msg--${msg.from || msg.sender_type}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.22 }}
                   >
-                    <div className="sp-chat__bubble">{msg.text}</div>
+                    <div className="sp-chat__bubble">{msg.text || msg.message}</div>
                   </motion.div>
                 ))}
                 {chatTyping && (
@@ -779,15 +1035,16 @@ function SupportPage() {
       {!chatOpen && (
         <motion.button
           className="sp-fab"
-          onClick={() => setChatOpen(true)}
+          onClick={startChat}
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.96 }}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.8, type: 'spring' }}
           title="Open live chat"
+          disabled={chatLoading}
         >
-          <MessageSquare size={22} />
+          {chatLoading ? <Loader size={22} className="sp-spinner" /> : <MessageSquare size={22} />}
           <span className="sp-fab__ping" />
         </motion.button>
       )}

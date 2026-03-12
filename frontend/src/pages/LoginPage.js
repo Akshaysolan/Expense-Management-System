@@ -224,12 +224,6 @@ function LoginPage() {
               Employee
             </button>
           </div>
-          <div className="auth-demo-info">
-            <p><span>Admin:</span> admin@demo.com / Admin@123</p>
-            <p><span>Employee:</span> employee@demo.com / Emp@123</p>
-            <p><span>Manager:</span> john@company.com / John@123</p>
-            <p><span>Finance:</span> janice@company.com / Janice@123</p>
-          </div>
         </div>
 
         {/* Footer */}

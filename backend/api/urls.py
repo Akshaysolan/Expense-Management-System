@@ -76,4 +76,23 @@ urlpatterns = [
     path('video/book/',      views.book_video_call,      name='book-video'),
     path('stats/realtime/',  views.get_support_stats,    name='realtime-stats'),
     path('subscribe/',       views.subscribe_to_updates, name='subscribe'),
+
+
+    # Add these to urlpatterns
+    path('pdf-history/', views.pdf_history, name='pdf-history'),
+    path('pdf-analytics/<int:pdf_id>/', views.pdf_analytics_detail, name='pdf-analytics-detail'),
+
+    
+    path('notifications/',                       views.notification_list,         name='notification-list'),
+    path('notifications/mark-all-read/',         views.notification_mark_all_read,name='notification-mark-all'),
+    path('notifications/clear-all/',             views.notification_clear_all,    name='notification-clear-all'),
+    path('notifications/<uuid:pk>/read/',        views.notification_mark_read,    name='notification-read'),
+    path('notifications/<uuid:pk>/',             views.notification_delete,       name='notification-delete'),
+    path('messages/',                            views.message_thread_list,   name='message-list'),
+    path('messages/threads/<uuid:pk>/',          views.message_thread_detail, name='message-thread-detail'),
+    path('messages/threads/<uuid:pk>/reply/',    views.message_reply,         name='message-reply'),
+    path('messages/threads/<uuid:pk>/delete/',   views.message_thread_delete, name='message-thread-delete'),
+    path('messages/threads/<uuid:pk>/star/',     views.message_thread_star,   name='message-thread-star'),
+    path('analytics/',                            views.analytics,             name='analytics'),
+
 ]

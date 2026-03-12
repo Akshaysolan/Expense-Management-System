@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
+import PDFAnalyticsPage from './pages/PDFAnalyticsPage';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth, authAxios } from './contexts/AuthContext';
 import Sidebar from './components/Sidebar';
@@ -24,11 +25,14 @@ import UserProfilePage from './pages/UserProfilePage';
 import ReportsPage from './pages/ReportsPage';
 import MonthlyReportPage from './pages/MonthlyReportPage';
 import AuditLogsPage from './pages/AuditLogsPage';
+import NotificationsPage from './pages/NotificationsPage';
+import MessagesPage from './pages/MessagesPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 // ── Route guard: redirect to /login if not authenticated ──
 function PrivateRoute({ children, requiredRole = null }) {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -37,16 +41,16 @@ function PrivateRoute({ children, requiredRole = null }) {
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
+
   // Check role-based access
   if (requiredRole && user.role !== requiredRole && user.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
-  
+
   return children;
 }
 
@@ -196,31 +200,39 @@ function AppLayout() {
             <Route path="/dashboard" element={
               <Dashboard data={dashboardData} onPDFUpload={handlePDFUpload} />
             } />
-            
+
             {/* Expense Routes */}
             <Route path="/expenses" element={
               <ExpensesPage expenses={dashboardData.expenses} />
             } />
             <Route path="/expenses/:id" element={<ExpenseDetailPage />} />
-            
+
             {/* Trip Routes */}
             <Route path="/trips" element={<TripsPage />} />
             <Route path="/trips/:id" element={<TripDetailPage />} />
-            
+
             {/* Approval Routes */}
             <Route path="/approvals" element={<ApprovalsPage />} />
             <Route path="/approvals/:id" element={<ApprovalDetailPage />} />
-            
+
             {/* Profile Route */}
             <Route path="/profile/:userId" element={<UserProfilePage />} />
-            
+
             {/* Report Routes */}
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/reports/monthly/:year/:month" element={<MonthlyReportPage />} />
-            
+
             {/* Settings and Support */}
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/support" element={<SupportPage />} />
+
+            {/* PDF Analytics Routes */}
+            <Route path="/pdf-analytics" element={<PDFAnalyticsPage />} />
+            <Route path="/pdf-analytics/:id" element={<PDFAnalyticsPage />} />
+
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
           </Routes>
         </div>
       </main>

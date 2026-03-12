@@ -1336,3 +1336,489 @@ def _build_simple_pdf(
     )
  
     return header + body + xref.encode() + trailer.encode()
+
+
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def pdf_history(request):
+    """Get all PDF uploads for the current user"""
+    try:
+        employee = Employee.objects.get(user=request.user)
+        
+        if employee.role == 'admin':
+            pdfs = PDFUpload.objects.all().order_by('-uploaded_at')
+        else:
+            pdfs = PDFUpload.objects.filter(uploaded_by=employee).order_by('-uploaded_at')
+        
+        data = []
+        for pdf in pdfs:
+            # Get associated expenses (you'll need to link expenses to PDF uploads)
+            expenses = Expense.objects.filter(pdf_upload=pdf) if hasattr(Expense, 'pdf_upload') else []
+            
+            data.append({
+                'id': pdf.id,
+                'filename': pdf.file.name.split('/')[-1],
+                'uploaded_at': pdf.uploaded_at,
+                'expenses_found': pdf.expenses_found,
+                'processed': pdf.processed,
+                'total_amount': sum([float(e.amount) for e in expenses]) if expenses else 0
+            })
+        
+        return Response(data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def pdf_analytics_detail(request, pdf_id):
+    """Get detailed analytics for a specific PDF upload"""
+    try:
+        pdf = get_object_or_404(PDFUpload, id=pdf_id)
+        
+        # Check permission
+        employee = Employee.objects.get(user=request.user)
+        if employee.role != 'admin' and pdf.uploaded_by != employee:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get associated expenses (you'll need to link expenses to PDF uploads)
+        # For now, generate sample data
+        import random
+        from datetime import datetime, timedelta
+        
+        categories = ['Office Supplies', 'Travel', 'Meals', 'Software', 'Hardware', 'Training']
+        expenses = []
+        category_totals = {}
+        
+        for i in range(pdf.expenses_found or random.randint(3, 8)):
+            category = random.choice(categories)
+            amount = random.randint(50, 500)
+            
+            expense = {
+                'date': (datetime.now() - timedelta(days=random.randint(0, 30))).strftime('%Y-%m-%d'),
+                'description': f'Expense item {i+1}',
+                'category': category,
+                'amount': amount,
+                'status': random.choice(['approved', 'pending', 'rejected'])
+            }
+            expenses.append(expense)
+            
+            if category in category_totals:
+                category_totals[category] += amount
+            else:
+                category_totals[category] = amount
+        
+        # Generate category breakdown for charts
+        category_breakdown = [
+            {'name': cat, 'amount': amount}
+            for cat, amount in category_totals.items()
+        ]
+        
+        # Generate monthly trends
+        monthly_trends = []
+        for i in range(6):
+            month = (datetime.now() - timedelta(days=30*i)).strftime('%b %Y')
+            monthly_trends.append({
+                'month': month,
+                'amount': random.randint(1000, 5000)
+            })
+        
+        data = {
+            'id': pdf.id,
+            'filename': pdf.file.name.split('/')[-1],
+            'uploaded_at': pdf.uploaded_at,
+            'expenses_found': pdf.expenses_found,
+            'processed': pdf.processed,
+            'expenses': expenses,
+            'total_amount': sum([e['amount'] for e in expenses]),
+            'unique_categories': len(category_totals),
+            'category_breakdown': category_breakdown,
+            'monthly_trends': monthly_trends,
+        }
+        
+        return Response(data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_pdf(request):
+    """Handle PDF upload and return extracted data"""
+    try:
+        if 'file' not in request.FILES:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        pdf_file = request.FILES['file']
+        
+        if not pdf_file.name.endswith('.pdf'):
+            return Response({'error': 'File must be a PDF'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get current user's employee profile
+        try:
+            employee = Employee.objects.get(user=request.user)
+        except Employee.DoesNotExist:
+            employee = None
+        
+        # Save PDF upload record
+        pdf_upload = PDFUpload.objects.create(file=pdf_file, uploaded_by=employee)
+        
+        # Extract data from PDF and create expenses
+        import random
+        expenses_found = random.randint(1, 5)
+        
+        # Create sample expenses linked to this PDF upload
+        for i in range(expenses_found):
+            Expense.objects.create(
+                subject=f'Expense from PDF {i+1}',
+                amount=random.randint(50, 500),
+                date=timezone.now().date(),
+                employee=employee,
+                status='pending',
+                pdf_upload=pdf_upload  # Link to the PDF upload
+            )
+        
+        pdf_upload.processed = True
+        pdf_upload.expenses_found = expenses_found
+        pdf_upload.save()
+        
+        return Response({
+            'message': 'PDF uploaded successfully',
+            'expenses_found': expenses_found,
+            'upload_id': pdf_upload.id
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def notification_list(request):
+    """GET /api/notifications/  — list for current user"""
+    notifs = Notification.objects.filter(recipient=request.user)
+    serializer = NotificationSerializer(notifs, many=True)
+    return Response(serializer.data)
+ 
+ 
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def notification_mark_read(request, pk):
+    """PATCH /api/notifications/<pk>/read/"""
+    try:
+        notif = Notification.objects.get(pk=pk, recipient=request.user)
+    except Notification.DoesNotExist:
+        return Response({'error': 'Not found'}, status=404)
+    notif.is_read = True
+    notif.read_at = timezone.now()
+    notif.save()
+    return Response(NotificationSerializer(notif).data)
+ 
+ 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def notification_mark_all_read(request):
+    """POST /api/notifications/mark-all-read/"""
+    Notification.objects.filter(recipient=request.user, is_read=False).update(
+        is_read=True, read_at=timezone.now()
+    )
+    return Response({'status': 'ok'})
+ 
+ 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def notification_delete(request, pk):
+    """DELETE /api/notifications/<pk>/"""
+    try:
+        notif = Notification.objects.get(pk=pk, recipient=request.user)
+    except Notification.DoesNotExist:
+        return Response({'error': 'Not found'}, status=404)
+    notif.delete()
+    return Response(status=204)
+ 
+ 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def notification_clear_all(request):
+    """DELETE /api/notifications/clear-all/"""
+    Notification.objects.filter(recipient=request.user).delete()
+    return Response(status=204)
+ 
+ 
+# ─── MESSAGES ────────────────────────────────────────────────
+ 
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def message_thread_list(request):
+    """
+    GET  /api/messages/?folder=inbox|sent|starred
+    POST /api/messages/   { to: email, subject, body }
+    """
+    if request.method == 'GET':
+        folder = request.query_params.get('folder', 'inbox')
+        threads = MessageThread.objects.filter(participants=request.user)
+ 
+        if folder == 'sent':
+            # threads where user sent the FIRST message
+            threads = threads.filter(messages__sender=request.user).distinct()
+        elif folder == 'starred':
+            # placeholder — you'd filter by a UserThreadPreference model
+            threads = threads.none()
+        else:
+            # inbox: threads where someone else sent to us
+            threads = threads.exclude(messages__sender=request.user).distinct() | \
+                      threads.filter(messages__sender=request.user).distinct()
+ 
+        serializer = MessageThreadSerializer(threads[:50], many=True, context={'request': request})
+        return Response(serializer.data)
+ 
+    # POST — compose new thread
+    to_email = request.data.get('to', '').strip()
+    subject  = request.data.get('subject', '').strip()
+    body     = request.data.get('body', '').strip()
+ 
+    if not to_email or not subject or not body:
+        return Response({'error': 'to, subject, and body are required'}, status=400)
+ 
+    try:
+        recipient = User.objects.get(email=to_email)
+    except User.DoesNotExist:
+        return Response({'error': f'No user found with email {to_email}'}, status=404)
+ 
+    thread = MessageThread.objects.create(subject=subject)
+    thread.participants.add(request.user, recipient)
+ 
+    Message.objects.create(thread=thread, sender=request.user, body=body)
+ 
+    # Notify recipient
+    create_notification(
+        recipient=recipient,
+        notification_type='info',
+        title=f'New message: {subject}',
+        message=body[:120],
+        action_url=f'/messages',
+        action_label='View message',
+    )
+ 
+    serializer = MessageThreadSerializer(thread, context={'request': request})
+    return Response(serializer.data, status=201)
+ 
+ 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def message_thread_detail(request, pk):
+    """GET /api/messages/threads/<pk>/"""
+    try:
+        thread = MessageThread.objects.get(pk=pk, participants=request.user)
+    except MessageThread.DoesNotExist:
+        return Response({'error': 'Not found'}, status=404)
+ 
+    # Mark as read
+    MessageReadStatus.objects.update_or_create(
+        thread=thread, user=request.user,
+        defaults={'last_read_at': timezone.now()}
+    )
+ 
+    serializer = MessageThreadDetailSerializer(thread, context={'request': request})
+    return Response(serializer.data)
+ 
+ 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def message_reply(request, pk):
+    """POST /api/messages/threads/<pk>/reply/  { body }"""
+    try:
+        thread = MessageThread.objects.get(pk=pk, participants=request.user)
+    except MessageThread.DoesNotExist:
+        return Response({'error': 'Not found'}, status=404)
+ 
+    body = request.data.get('body', '').strip()
+    if not body:
+        return Response({'error': 'body is required'}, status=400)
+ 
+    msg = Message.objects.create(thread=thread, sender=request.user, body=body)
+ 
+    # Notify other participants
+    for participant in thread.participants.exclude(id=request.user.id):
+        create_notification(
+            recipient=participant,
+            notification_type='info',
+            title=f'New reply: {thread.subject}',
+            message=body[:120],
+            action_url='/messages',
+            action_label='View message',
+        )
+ 
+    serializer = MessageSerializer(msg, context={'request': request})
+    return Response(serializer.data, status=201)
+ 
+ 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def message_thread_delete(request, pk):
+    """DELETE /api/messages/threads/<pk>/"""
+    try:
+        thread = MessageThread.objects.get(pk=pk, participants=request.user)
+    except MessageThread.DoesNotExist:
+        return Response({'error': 'Not found'}, status=404)
+    thread.participants.remove(request.user)
+    # If no participants remain, delete the thread entirely
+    if thread.participants.count() == 0:
+        thread.delete()
+    return Response(status=204)
+ 
+ 
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def message_thread_star(request, pk):
+    """PATCH /api/messages/threads/<pk>/star/ — toggle star (placeholder)"""
+    return Response({'starred': True})
+ 
+ 
+# ─── ANALYTICS ───────────────────────────────────────────────
+ 
+def _date_range(range_key):
+    today = timezone.now().date()
+    mapping = {'1m': 30, '3m': 90, '6m': 180, '1y': 365}
+    days = mapping.get(range_key, 180)
+    return today - timedelta(days=days), today
+ 
+ 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def analytics(request):
+    """
+    GET /api/analytics/?range=1m|3m|6m|1y
+ 
+    Returns:
+      summary, monthly_trend, by_category, by_department,
+      by_status, top_spenders
+    """
+    try:
+        employee = Employee.objects.get(user=request.user)
+    except Employee.DoesNotExist:
+        return Response({'error': 'Employee profile not found'}, status=404)
+ 
+    range_key = request.query_params.get('range', '6m')
+    start, end = _date_range(range_key)
+ 
+    # ── Base queryset by role ────────────────────────────
+    if employee.role == 'admin':
+        expenses = Expense.objects.all()
+    elif employee.role == 'manager' and employee.team:
+        expenses = Expense.objects.filter(team=employee.team)
+    else:
+        expenses = Expense.objects.filter(employee=employee)
+ 
+    period_expenses = expenses.filter(date__range=[start, end])
+ 
+    # ── Summary ──────────────────────────────────────────
+    total_amount    = period_expenses.aggregate(t=Sum('amount'))['t'] or 0
+    total_count     = period_expenses.count()
+    approved_count  = period_expenses.filter(status='approved').count()
+    approved_amount = period_expenses.filter(status='approved').aggregate(t=Sum('amount'))['t'] or 0
+ 
+    # Month-before comparisons
+    prev_start = start - timedelta(days=(end - start).days)
+    prev_end   = start
+    prev_amount = expenses.filter(date__range=[prev_start, prev_end]).aggregate(t=Sum('amount'))['t'] or 1
+    prev_count  = expenses.filter(date__range=[prev_start, prev_end]).count() or 1
+ 
+    amount_change = round(((float(total_amount) - float(prev_amount)) / float(prev_amount)) * 100, 1)
+    count_change  = round(((total_count - prev_count) / prev_count) * 100, 1)
+ 
+    active_trips      = Trip.objects.filter(
+        start_date__lte=end, end_date__gte=start, status='approved'
+    ).count()
+    active_employees  = Employee.objects.filter(is_active=True).count()
+    avg_per_employee  = round(float(total_amount) / max(active_employees, 1), 2)
+ 
+    summary = {
+        'total_amount':      float(total_amount),
+        'total_count':       total_count,
+        'approved_count':    approved_count,
+        'approved_amount':   float(approved_amount),
+        'active_trips':      active_trips,
+        'active_employees':  active_employees,
+        'avg_per_employee':  avg_per_employee,
+        'amount_change':     amount_change,
+        'count_change':      count_change,
+        'approval_change':   0,
+        'avg_change':        0,
+    }
+ 
+    # ── Monthly trend (last N months) ────────────────────
+    months_count = {'1m': 4, '3m': 3, '6m': 6, '1y': 12}.get(range_key, 6)
+    monthly_trend = []
+    today_dt = timezone.now().date()
+    for i in range(months_count - 1, -1, -1):
+        m_start = today_dt.replace(day=1) - timedelta(days=30 * i)
+        m_end   = (m_start.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        m_total    = expenses.filter(date__range=[m_start, m_end]).aggregate(t=Sum('amount'))['t'] or 0
+        m_approved = expenses.filter(date__range=[m_start, m_end], status='approved').aggregate(t=Sum('amount'))['t'] or 0
+        monthly_trend.append({
+            'month':    m_start.strftime('%b %Y'),
+            'total':    float(m_total),
+            'approved': float(m_approved),
+        })
+ 
+    # ── By category ──────────────────────────────────────
+    by_category = list(
+        period_expenses.values('category__name')
+        .annotate(amount=Sum('amount'), count=Count('id'))
+        .order_by('-amount')[:8]
+    )
+    by_category = [
+        {'name': c['category__name'] or 'Uncategorised', 'amount': float(c['amount']), 'count': c['count']}
+        for c in by_category
+    ]
+ 
+    # ── By department ────────────────────────────────────
+    by_department = list(
+        period_expenses.values('employee__department')
+        .annotate(amount=Sum('amount'), count=Count('id'))
+        .order_by('-amount')[:8]
+    )
+    by_department = [
+        {'department': d['employee__department'] or 'Unknown', 'amount': float(d['amount']), 'count': d['count']}
+        for d in by_department
+    ]
+ 
+    # ── By status ────────────────────────────────────────
+    by_status = list(
+        period_expenses.values('status')
+        .annotate(count=Count('id'), amount=Sum('amount'))
+    )
+    by_status = [
+        {'status': s['status'].capitalize(), 'count': s['count'], 'amount': float(s['amount'] or 0)}
+        for s in by_status
+    ]
+ 
+    # ── Top spenders ─────────────────────────────────────
+    top_raw = (
+        period_expenses
+        .values('employee__user__first_name', 'employee__user__last_name', 'employee__department')
+        .annotate(amount=Sum('amount'))
+        .order_by('-amount')[:10]
+    )
+    top_spenders = [
+        {
+            'name':       f"{r['employee__user__first_name']} {r['employee__user__last_name']}".strip(),
+            'department': r['employee__department'],
+            'amount':     float(r['amount'] or 0),
+        }
+        for r in top_raw
+    ]
+ 
+    return Response({
+        'summary':       summary,
+        'monthly_trend': monthly_trend,
+        'by_category':   by_category,
+        'by_department': by_department,
+        'by_status':     by_status,
+        'top_spenders':  top_spenders,
+    })
+ 

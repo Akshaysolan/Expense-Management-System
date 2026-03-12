@@ -8,10 +8,10 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-// ─── API setup ───────────────────────────────────────────────────────────────
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
-// ─── Static config (UI labels only — no business data) ───────────────────────
+
 const REPORT_CARDS = [
   {
     id: 1,

@@ -3,6 +3,11 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from .models import Team, Employee, Category, Expense, Trip, PDFUpload
 from .models import Report
+from .models import (
+    FAQ, Document, SupportTicket, TicketReply, 
+    LiveChatSession, ChatMessage, FAQFeedback, 
+    SupportStat, VideoBooking, Notification, MessageThread, Message  
+)
 
 class EmployeeInline(admin.StackedInline):
     model = Employee
@@ -135,3 +140,24 @@ class ReportAdmin(admin.ModelAdmin):
     list_filter  = ['report_type', 'format', 'status', 'created_at']
     search_fields = ['title', 'report_id']
     readonly_fields = ['report_id', 'created_at', 'updated_at']
+
+
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display  = ['title', 'notification_type', 'recipient', 'is_read', 'created_at']
+    list_filter   = ['notification_type', 'is_read', 'created_at']
+    search_fields = ['title', 'message', 'recipient__email']
+    readonly_fields = ['id', 'created_at']
+
+@admin.register(MessageThread)
+class MessageThreadAdmin(admin.ModelAdmin):
+    list_display  = ['subject', 'created_at', 'updated_at']
+    search_fields = ['subject']
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display  = ['thread', 'sender', 'created_at']
+    list_filter   = ['created_at']
+    search_fields = ['body']

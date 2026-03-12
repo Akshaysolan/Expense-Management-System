@@ -1,5 +1,5 @@
 // frontend/src/components/Header.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  BarChart2,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,7 +28,25 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
 
-  // Debug log to see exact user data structure
+  // ── Refs for click-outside detection ──
+  const notificationsRef = useRef(null);
+  const userMenuRef = useRef(null);
+
+  // ── Close dropdowns when clicking outside ──
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   console.log('👤 Full user object:', JSON.stringify(user, null, 2));
   console.log('👤 User role value:', user?.role);
   console.log('👤 User role type:', typeof user?.role);
@@ -41,55 +60,33 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Format role for display - preserve the actual role value
   const formatRole = (role) => {
     if (!role) return 'Employee';
-    
-    // Convert to string and trim
     const roleStr = String(role).trim();
-    
-    // Capitalize first letter, keep the rest as is
     return roleStr.charAt(0).toUpperCase() + roleStr.slice(1).toLowerCase();
   };
 
-  // Get user's full name
   const getUserFullName = () => {
-    if (user?.first_name && user?.last_name) {
-      return `${user.first_name} ${user.last_name}`;
-    } else if (user?.first_name) {
-      return user.first_name;
-    } else if (user?.email) {
-      return user.email.split('@')[0];
-    }
+    if (user?.first_name && user?.last_name) return `${user.first_name} ${user.last_name}`;
+    else if (user?.first_name) return user.first_name;
+    else if (user?.email) return user.email.split('@')[0];
     return 'User';
   };
 
-  // Get user's display name (first name only for header)
   const getUserDisplayName = () => {
-    if (user?.first_name) {
-      return user.first_name;
-    } else if (user?.email) {
-      return user.email.split('@')[0];
-    }
+    if (user?.first_name) return user.first_name;
+    else if (user?.email) return user.email.split('@')[0];
     return 'User';
   };
 
-  // Get user's initials for avatar
   const getUserInitials = () => {
-    if (user?.first_name && user?.last_name) {
-      return `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`;
-    } else if (user?.first_name) {
-      return user.first_name.charAt(0);
-    } else if (user?.email) {
-      return user.email.charAt(0).toUpperCase();
-    }
+    if (user?.first_name && user?.last_name) return `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`;
+    else if (user?.first_name) return user.first_name.charAt(0);
+    else if (user?.email) return user.email.charAt(0).toUpperCase();
     return 'U';
   };
 
-  // If user is not loaded yet, don't render
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <motion.header 
@@ -99,8 +96,6 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
     >
       <div className="header-left-section">
-
-        {/* ── Sidebar Toggle Button ── */}
         {isMobile ? (
           <motion.button
             className="header-sidebar-toggle"
@@ -134,7 +129,6 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
             <span className="header-greeting-name">ExpensePro</span>
           </div>
         </motion.div>
-       
       </div>
 
       <div className="header-center-section">
@@ -178,7 +172,8 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </motion.button>
 
-        <div className="header-notifications-wrapper">
+        {/* ── Notifications with ref ── */}
+        <div className="header-notifications-wrapper" ref={notificationsRef}>
           <motion.button 
             className="header-notifications-button"
             onClick={() => setShowNotifications(!showNotifications)}
@@ -231,14 +226,17 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
                   ))}
                 </div>
                 <div className="header-dropdown-footer">
-                  <Link to="/notifications">View all notifications</Link>
+                  <Link to="/notifications" onClick={() => setShowNotifications(false)}>
+                    View all notifications
+                  </Link>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        <div className="header-user-wrapper">
+        {/* ── User Menu with ref ── */}
+        <div className="header-user-wrapper" ref={userMenuRef}>
           <motion.button 
             className="header-user-button"
             onClick={() => setShowUserMenu(!showUserMenu)}
@@ -256,11 +254,8 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
               <span className="header-online-indicator"></span>
             </div>
             <div className="header-user-info">
-              <span className="header-user-name">
-                {getUserDisplayName()}
-              </span>
+              <span className="header-user-name">{getUserDisplayName()}</span>
               <span className="header-user-role">
-                {/* Directly use the role without formatting first to debug */}
                 {user?.role === 'manager' ? 'Manager' : 
                  user?.role === 'employee' ? 'Employee' : 
                  user?.role === 'admin' ? 'Admin' : 
@@ -308,6 +303,10 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
                     <User size={16} />
                     <span>My Profile</span>
                   </Link>
+                  <Link to={`/analytics/${user?.id}`} className="header-menu-item" onClick={() => setShowUserMenu(false)}>
+                    <BarChart2 size={16} />
+                    <span>Analytics</span>
+                  </Link>
                   <Link to="/settings" className="header-menu-item" onClick={() => setShowUserMenu(false)}>
                     <Settings size={16} />
                     <span>Settings</span>
@@ -315,6 +314,11 @@ function Header({ isCollapsed, toggleSidebar, isMobile, toggleMobileSidebar }) {
                   <Link to="/messages" className="header-menu-item" onClick={() => setShowUserMenu(false)}>
                     <Mail size={16} />
                     <span>Messages</span>
+                    <span className="header-menu-badge">3</span>
+                  </Link>
+                  <Link to="/notifications" className="header-menu-item" onClick={() => setShowUserMenu(false)}>
+                    <Bell size={16} />
+                    <span>Notifications</span>
                     <span className="header-menu-badge">3</span>
                   </Link>
                   <div className="header-menu-divider"></div>

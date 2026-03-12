@@ -23,7 +23,7 @@ function Sidebar({ isCollapsed, isMobile, closeMobileSidebar }) {
     { path: '/expenses',  icon: Receipt,         label: 'Expenses',   color: '#10b981', badge: 5 },
     { path: '/trips',     icon: Plane,           label: 'Trips',      color: '#f59e0b', badge: 2 },
     { path: '/approvals', icon: CheckCircle2,    label: 'Approvals',  color: '#8b5cf6', badge: 3 },
-    { path: '/analytics', icon: BarChart3,       label: 'Analytics',  color: '#ec4899' },
+    { path: '/pdf-analytics', icon: BarChart3,       label: 'Analytics',  color: '#ec4899' },
     { path: '/reports',   icon: FileText,        label: 'Reports',    color: '#14b8a6' },
     { path: '/settings',  icon: Settings,        label: 'Settings',   color: '#64748b' },
     { path: '/support',   icon: HeadphonesIcon,  label: 'Support',    color: '#f43f5e' },

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from .models import Team, Employee, Category, Expense, Trip, PDFUpload
+from .models import Report
 
 class EmployeeInline(admin.StackedInline):
     model = Employee
@@ -122,3 +123,15 @@ class VideoBookingAdmin(admin.ModelAdmin):
     list_display = ['booking_id', 'name', 'email', 'preferred_date', 'preferred_time', 'status']
     list_filter = ['status', 'preferred_date']
     search_fields = ['booking_id', 'name', 'email', 'topic']
+
+
+@admin.register(Report)
+class ReportAdmin(admin.ModelAdmin):
+    list_display = [
+        'report_id', 'title', 'report_type', 'format',
+        'status', 'date_range_start', 'date_range_end',
+        'generated_by', 'created_at',
+    ]
+    list_filter  = ['report_type', 'format', 'status', 'created_at']
+    search_fields = ['title', 'report_id']
+    readonly_fields = ['report_id', 'created_at', 'updated_at']

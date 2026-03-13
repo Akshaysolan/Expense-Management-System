@@ -14,12 +14,10 @@ from django.http import JsonResponse
 def home(request):
     return JsonResponse({"message": "Expense Management API Running"})
 
-urlpatterns = [
-    path("", home),
-]
 
 urlpatterns = [
 
+    path('', home, name='api-home'),
     # ========== AUTHENTICATION ==========
     path('auth/register/',         views.register,         name='auth-register'),
     path('auth/login/',            views.login,            name='auth-login'),

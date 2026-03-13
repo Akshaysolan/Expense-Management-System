@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import axios from 'axios';
 
 const AuthContext = createContext(null);
-const API_URL = 'http://localhost:8000/api';
+const API_URL = "https://expense-management-system-ye3b.onrender.com/api";
 
 // Create axios instance
 const authAxios = axios.create({

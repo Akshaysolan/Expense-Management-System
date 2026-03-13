@@ -8,6 +8,15 @@
 from django.urls import path
 from . import views
 from rest_framework_simplejwt.views import TokenRefreshView
+from django.http import JsonResponse
+
+
+def home(request):
+    return JsonResponse({"message": "Expense Management API Running"})
+
+urlpatterns = [
+    path("", home),
+]
 
 urlpatterns = [
 

@@ -1,11 +1,10 @@
-// frontend/src/pages/TripDetailPage.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Edit, Trash2, Download, CheckCircle, 
   XCircle, Clock, User, Calendar, MapPin,
-  DollarSign, Plane, FileText
+  DollarSign, Plane, FileText, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -88,7 +87,8 @@ function TripDetailPage() {
   if (error || !trip) {
     return (
       <div className="error-container">
-        <h2>⚠️ Error</h2>
+        <AlertCircle size={48} className="error-icon" />
+        <h2>Error</h2>
         <p>{error || 'Trip not found'}</p>
         <button onClick={() => navigate('/trips')} className="back-btn">
           <ArrowLeft size={16} /> Back to Trips
@@ -99,7 +99,6 @@ function TripDetailPage() {
 
   return (
     <div className="trip-detail-page">
-      {/* Header */}
       <div className="detail-header">
         <button className="back-button" onClick={() => navigate('/trips')}>
           <ArrowLeft size={20} />
@@ -107,11 +106,17 @@ function TripDetailPage() {
         </button>
         
         <div className="header-actions">
-          <button className="action-button edit" onClick={() => navigate(`/trips/${id}/edit`)}>
+          <button 
+            className="action-button edit" 
+            onClick={() => navigate(`/trips/${id}/edit`)}
+          >
             <Edit size={18} />
             <span>Edit</span>
           </button>
-          <button className="action-button delete" onClick={() => setShowDeleteModal(true)}>
+          <button 
+            className="action-button delete" 
+            onClick={() => setShowDeleteModal(true)}
+          >
             <Trash2 size={18} />
             <span>Delete</span>
           </button>
@@ -122,7 +127,6 @@ function TripDetailPage() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="detail-content">
         <motion.div 
           className="detail-card"
@@ -130,13 +134,11 @@ function TripDetailPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Status Banner */}
           <div className={`status-banner ${getStatusClass(trip.status)}`}>
             {getStatusIcon(trip.status)}
             <span>{trip.status}</span>
           </div>
 
-          {/* Title Section */}
           <div className="title-section">
             <h1>
               <Plane className="title-icon" />
@@ -145,7 +147,6 @@ function TripDetailPage() {
             <p className="purpose">{trip.purpose}</p>
           </div>
 
-          {/* Details Grid */}
           <div className="details-grid">
             <div className="detail-item">
               <MapPin className="detail-icon" />
@@ -203,7 +204,6 @@ function TripDetailPage() {
             </div>
           </div>
 
-          {/* Expenses Section */}
           {trip.expenses && trip.expenses.length > 0 && (
             <div className="expenses-section">
               <h3>Trip Expenses</h3>
@@ -218,7 +218,6 @@ function TripDetailPage() {
             </div>
           )}
 
-          {/* Notes Section */}
           {trip.notes && (
             <div className="notes-section">
               <h3>Notes</h3>
@@ -226,7 +225,6 @@ function TripDetailPage() {
             </div>
           )}
 
-          {/* Metadata */}
           <div className="metadata-section">
             <p className="metadata">
               Created: {formatDate(trip.created_at)}
@@ -238,27 +236,37 @@ function TripDetailPage() {
         </motion.div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="modal-overlay">
+      <AnimatePresence>
+        {showDeleteModal && (
           <motion.div 
-            className="modal-content delete-modal"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowDeleteModal(false)}
           >
-            <h2>Delete Trip</h2>
-            <p>Are you sure you want to delete the trip to "{trip.destination}"? This action cannot be undone.</p>
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>
-                Cancel
-              </button>
-              <button className="btn-danger" onClick={handleDelete}>
-                Delete
-              </button>
-            </div>
+            <motion.div 
+              className="modal-content delete-modal"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <AlertCircle size={48} className="modal-icon warning" />
+              <h2>Delete Trip</h2>
+              <p>Are you sure you want to delete the trip to "{trip.destination}"? This action cannot be undone.</p>
+              <div className="modal-actions">
+                <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>
+                  Cancel
+                </button>
+                <button className="btn-danger" onClick={handleDelete}>
+                  Delete
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

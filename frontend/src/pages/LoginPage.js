@@ -1,4 +1,3 @@
-// frontend/src/pages/LoginPage.js
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -33,7 +32,6 @@ function LoginPage() {
     try {
       const user = await login(form.email, form.password);
       
-      // Redirect based on role
       if (user.role === 'admin') {
         navigate('/admin', { replace: true });
       } else {
@@ -51,7 +49,6 @@ function LoginPage() {
     }
   };
 
-  // Demo credentials for quick testing
   const fillDemoCredentials = (role) => {
     if (role === 'admin') {
       setForm({ email: 'admin@demo.com', password: 'Admin@123' });
@@ -66,7 +63,6 @@ function LoginPage() {
 
   return (
     <div className="auth-page">
-      {/* Background decoration */}
       <div className="auth-bg">
         <div className="auth-bg-orb auth-bg-orb-1" />
         <div className="auth-bg-orb auth-bg-orb-2" />
@@ -79,7 +75,6 @@ function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
       >
-        {/* Logo */}
         <div className="auth-logo">
           <motion.span 
             className="auth-logo-icon"
@@ -93,7 +88,6 @@ function LoginPage() {
           </span>
         </div>
 
-        {/* Header */}
         <div className="auth-header">
           <h1 className="auth-title">Welcome Back</h1>
           <p className="auth-subtitle">
@@ -101,7 +95,6 @@ function LoginPage() {
           </p>
         </div>
 
-        {/* Error Message */}
         {error && (
           <motion.div 
             className="auth-error"
@@ -113,7 +106,6 @@ function LoginPage() {
           </motion.div>
         )}
 
-        {/* Login Form */}
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-field">
             <label className="auth-label" htmlFor="email">
@@ -191,7 +183,6 @@ function LoginPage() {
           </motion.button>
         </form>
 
-        {/* Demo Credentials */}
         <div className="auth-demo">
           <p className="auth-demo-title">Demo Accounts</p>
           <div className="auth-demo-buttons">
@@ -226,7 +217,6 @@ function LoginPage() {
           </div>
         </div>
 
-        {/* Footer */}
         <p className="auth-footer">
           Don't have an account?{' '}
           <Link to="/register" className="auth-link">

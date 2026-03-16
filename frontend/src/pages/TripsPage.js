@@ -1,78 +1,88 @@
-// frontend/src/pages/TripsPage.js
-import React, { useState } from 'react';
-import { FaPlus, FaPlane, FaMapMarkerAlt, FaCalendar, FaUser } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaPlus, FaPlane, FaMapMarkerAlt, FaCalendar, FaUser, FaTimes } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 
 function TripsPage() {
-  const [trips, setTrips] = useState([
-    {
-      id: 1,
-      destination: 'New York',
-      employee: 'John Smith',
-      startDate: '2026-04-15',
-      endDate: '2026-04-20',
-      purpose: 'Client Meeting',
-      status: 'Approved',
-      expenses: 1250.75
-    },
-    {
-      id: 2,
-      destination: 'London',
-      employee: 'Sarah Jade',
-      startDate: '2026-04-22',
-      endDate: '2026-04-28',
-      purpose: 'Conference',
-      status: 'Pending',
-      expenses: 0
-    },
-    {
-      id: 3,
-      destination: 'Tokyo',
-      employee: 'Mark Brown',
-      startDate: '2026-05-05',
-      endDate: '2026-05-12',
-      purpose: 'Business Development',
-      status: 'Approved',
-      expenses: 3450.50
-    }
-  ]);
-
+  const navigate = useNavigate();
+  const { authAxios, user } = useAuth();
+  
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newTrip, setNewTrip] = useState({
     destination: '',
-    employee: '',
-    startDate: '',
-    endDate: '',
     purpose: '',
-    status: 'Pending'
+    start_date: '',
+    end_date: '',
+    estimated_expenses: '',
+    employee: user?.id || ''
   });
+
+  useEffect(() => {
+    fetchTrips();
+  }, []);
+
+  const fetchTrips = async () => {
+    try {
+      setLoading(true);
+      const response = await authAxios.get('/trips/');
+      setTrips(response.data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching trips:', err);
+      setError('Failed to load trips.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewTrip(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const trip = {
-      ...newTrip,
-      id: trips.length + 1,
-      expenses: 0
-    };
-    setTrips([...trips, trip]);
-    setShowAddForm(false);
-    setNewTrip({
-      destination: '',
-      employee: '',
-      startDate: '',
-      endDate: '',
-      purpose: '',
-      status: 'Pending'
-    });
+    try {
+      setLoading(true);
+      const response = await authAxios.post('/trips/', newTrip);
+      setTrips(prev => [response.data, ...prev]);
+      setShowAddForm(false);
+      setNewTrip({
+        destination: '',
+        purpose: '',
+        start_date: '',
+        end_date: '',
+        estimated_expenses: '',
+        employee: user?.id || ''
+      });
+    } catch (err) {
+      console.error('Error creating trip:', err);
+      alert('Failed to create trip. Please check all fields.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getStatusClass = (status) => {
-    return status.toLowerCase() === 'approved' ? 'status-approved' : 'status-pending';
+    return status?.toLowerCase() || 'pending';
   };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  if (loading && trips.length === 0) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner" />
+        <p>Loading trips...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
@@ -88,127 +98,172 @@ function TripsPage() {
           <FaPlane className="stat-icon" />
           <div className="stat-info">
             <h3>Active Trips</h3>
-            <p className="stat-value">3</p>
+            <p className="stat-value">{trips.filter(t => t.status === 'approved').length}</p>
           </div>
         </div>
         <div className="stat-card">
           <FaCalendar className="stat-icon" />
           <div className="stat-info">
             <h3>Upcoming</h3>
-            <p className="stat-value">2</p>
+            <p className="stat-value">
+              {trips.filter(t => new Date(t.start_date) > new Date() && t.status === 'approved').length}
+            </p>
           </div>
         </div>
         <div className="stat-card">
           <FaMapMarkerAlt className="stat-icon" />
           <div className="stat-info">
-            <h3>Destinations</h3>
-            <p className="stat-value">5</p>
+            <h3>Total Trips</h3>
+            <p className="stat-value">{trips.length}</p>
           </div>
         </div>
       </div>
 
-      {showAddForm && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>Create New Trip</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Destination</label>
-                <input
-                  type="text"
-                  name="destination"
-                  value={newTrip.destination}
-                  onChange={handleInputChange}
-                  required
-                />
+      <AnimatePresence>
+        {showAddForm && (
+          <motion.div 
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowAddForm(false)}
+          >
+            <motion.div 
+              className="modal-content"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <h2>Create New Trip</h2>
+                <button className="close-btn" onClick={() => setShowAddForm(false)}>
+                  <FaTimes />
+                </button>
               </div>
-              <div className="form-group">
-                <label>Employee</label>
-                <input
-                  type="text"
-                  name="employee"
-                  value={newTrip.employee}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="form-row">
+              <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                  <label>Start Date</label>
+                  <label>Destination *</label>
                   <input
-                    type="date"
-                    name="startDate"
-                    value={newTrip.startDate}
+                    type="text"
+                    name="destination"
+                    value={newTrip.destination}
                     onChange={handleInputChange}
                     required
                   />
                 </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Start Date *</label>
+                    <input
+                      type="date"
+                      name="start_date"
+                      value={newTrip.start_date}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>End Date *</label>
+                    <input
+                      type="date"
+                      name="end_date"
+                      value={newTrip.end_date}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
                 <div className="form-group">
-                  <label>End Date</label>
+                  <label>Estimated Expenses (€)</label>
                   <input
-                    type="date"
-                    name="endDate"
-                    value={newTrip.endDate}
+                    type="number"
+                    name="estimated_expenses"
+                    step="0.01"
+                    min="0"
+                    value={newTrip.estimated_expenses}
                     onChange={handleInputChange}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Purpose *</label>
+                  <textarea
+                    name="purpose"
+                    value={newTrip.purpose}
+                    onChange={handleInputChange}
+                    rows="3"
                     required
                   />
                 </div>
-              </div>
-              <div className="form-group">
-                <label>Purpose</label>
-                <textarea
-                  name="purpose"
-                  value={newTrip.purpose}
-                  onChange={handleInputChange}
-                  rows="3"
-                  required
-                />
-              </div>
-              <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowAddForm(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary">
-                  Create Trip
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                <div className="form-actions">
+                  <button type="button" className="btn-secondary" onClick={() => setShowAddForm(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={loading}>
+                    {loading ? 'Creating...' : 'Create Trip'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="trips-list">
-        {trips.map(trip => (
-          <div key={trip.id} className="trip-card">
-            <div className="trip-header">
-              <h3>{trip.destination}</h3>
-              <span className={`trip-status ${getStatusClass(trip.status)}`}>
-                {trip.status}
-              </span>
-            </div>
-            <div className="trip-details">
-              <div className="trip-detail">
-                <FaUser className="detail-icon" />
-                <span>{trip.employee}</span>
+        {trips.length > 0 ? (
+          trips.map(trip => (
+            <motion.div 
+              key={trip.id} 
+              className="trip-card"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -4 }}
+            >
+              <div className="trip-header">
+                <h3>{trip.destination}</h3>
+                <span className={`trip-status ${getStatusClass(trip.status)}`}>
+                  {trip.status}
+                </span>
               </div>
-              <div className="trip-detail">
-                <FaCalendar className="detail-icon" />
-                <span>{new Date(trip.startDate).toLocaleDateString()} - {new Date(trip.endDate).toLocaleDateString()}</span>
+              <div className="trip-details">
+                <div className="trip-detail">
+                  <FaUser className="detail-icon" />
+                  <span>{trip.employee_name}</span>
+                </div>
+                <div className="trip-detail">
+                  <FaCalendar className="detail-icon" />
+                  <span>{formatDate(trip.start_date)} - {formatDate(trip.end_date)}</span>
+                </div>
+                <div className="trip-detail">
+                  <FaMapMarkerAlt className="detail-icon" />
+                  <span>{trip.purpose}</span>
+                </div>
               </div>
-              <div className="trip-detail">
-                <FaMapMarkerAlt className="detail-icon" />
-                <span>{trip.purpose}</span>
+              <div className="trip-footer">
+                <span className="trip-expenses">
+                  Estimated: €{parseFloat(trip.estimated_expenses || 0).toFixed(2)}
+                </span>
+                <div className="trip-actions">
+                  <button className="btn-small" onClick={() => navigate(`/trips/${trip.id}`)}>
+                    View
+                  </button>
+                  {trip.status === 'pending' && (
+                    <button className="btn-small" onClick={() => navigate(`/trips/${trip.id}/edit`)}>
+                      Edit
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="trip-footer">
-              <span className="trip-expenses">Expenses: €{trip.expenses.toFixed(2)}</span>
-              <div className="trip-actions">
-                <button className="btn-small">View</button>
-                <button className="btn-small">Edit</button>
-              </div>
-            </div>
+            </motion.div>
+          ))
+        ) : (
+          <div className="empty-state">
+            <FaPlane size={48} />
+            <h3>No trips found</h3>
+            <p>Click "New Trip" to create your first trip</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

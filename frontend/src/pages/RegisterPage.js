@@ -1,4 +1,3 @@
-// frontend/src/pages/RegisterPage.js
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -45,7 +44,6 @@ function RegisterPage() {
       ...form,
       [e.target.name]: e.target.value
     });
-    // Clear field error when user starts typing
     if (errors[e.target.name]) {
       setErrors({
         ...errors,
@@ -132,7 +130,6 @@ function RegisterPage() {
       const user = await register(form);
       setSuccess('Account created successfully! Redirecting...');
       
-      // Redirect based on role
       setTimeout(() => {
         if (user.role === 'admin') {
           navigate('/admin', { replace: true });
@@ -143,12 +140,10 @@ function RegisterPage() {
     } catch (err) {
       console.error('Registration error:', err);
       
-      // Handle different error formats from backend
       if (err.response?.data) {
         const backendErrors = err.response.data;
         const formattedErrors = {};
         
-        // Handle field-specific errors
         Object.keys(backendErrors).forEach(key => {
           if (key === 'non_field_errors' || key === 'general') {
             setErrors({ general: Array.isArray(backendErrors[key]) ? backendErrors[key][0] : backendErrors[key] });
@@ -170,7 +165,6 @@ function RegisterPage() {
 
   return (
     <div className="auth-page">
-      {/* Background decoration */}
       <div className="auth-bg">
         <div className="auth-bg-orb auth-bg-orb-1" />
         <div className="auth-bg-orb auth-bg-orb-2" />
@@ -183,7 +177,6 @@ function RegisterPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
       >
-        {/* Logo */}
         <div className="auth-logo">
           <motion.span 
             className="auth-logo-icon"
@@ -197,7 +190,6 @@ function RegisterPage() {
           </span>
         </div>
 
-        {/* Header */}
         <div className="auth-header">
           <h1 className="auth-title">Create Account</h1>
           <p className="auth-subtitle">
@@ -205,7 +197,6 @@ function RegisterPage() {
           </p>
         </div>
 
-        {/* Success Message */}
         {success && (
           <motion.div 
             className="auth-success"
@@ -217,7 +208,6 @@ function RegisterPage() {
           </motion.div>
         )}
 
-        {/* General Error */}
         {errors.general && (
           <motion.div 
             className="auth-error"
@@ -229,9 +219,7 @@ function RegisterPage() {
           </motion.div>
         )}
 
-        {/* Registration Form */}
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
-          {/* Name Row */}
           <div className="auth-form-row">
             <div className="auth-field">
               <label className="auth-label" htmlFor="first_name">
@@ -280,7 +268,6 @@ function RegisterPage() {
             </div>
           </div>
 
-          {/* Email */}
           <div className="auth-field">
             <label className="auth-label" htmlFor="email">
               Email Address <span className="auth-required">*</span>
@@ -304,7 +291,6 @@ function RegisterPage() {
             )}
           </div>
 
-          {/* Phone */}
           <div className="auth-field">
             <label className="auth-label" htmlFor="phone">
               Phone Number <span className="auth-optional">(optional)</span>
@@ -328,7 +314,6 @@ function RegisterPage() {
             )}
           </div>
 
-          {/* Department and Role Row */}
           <div className="auth-form-row">
             <div className="auth-field">
               <label className="auth-label" htmlFor="department">
@@ -379,7 +364,6 @@ function RegisterPage() {
             </div>
           </div>
 
-          {/* Password Row */}
           <div className="auth-form-row">
             <div className="auth-field">
               <label className="auth-label" htmlFor="password">
@@ -408,7 +392,6 @@ function RegisterPage() {
                 </button>
               </div>
               
-              {/* Password Strength Indicator */}
               {form.password && (
                 <div className="auth-password-strength">
                   <div 
@@ -458,7 +441,6 @@ function RegisterPage() {
             </div>
           </div>
 
-          {/* Password Requirements */}
           <div className="auth-requirements">
             <p className="auth-requirements-title">Password must contain:</p>
             <ul className="auth-requirements-list">
@@ -477,7 +459,6 @@ function RegisterPage() {
             </ul>
           </div>
 
-          {/* Terms */}
           <div className="auth-terms">
             <label className="auth-checkbox">
               <input type="checkbox" required /> 
@@ -506,15 +487,12 @@ function RegisterPage() {
           </motion.button>
         </form>
 
-        {/* Footer */}
         <p className="auth-footer">
           Already have an account?{' '}
           <Link to="/login" className="auth-link">
             Sign in
           </Link>
         </p>
-
-       
       </motion.div>
     </div>
   );

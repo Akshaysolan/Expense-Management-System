@@ -1,11 +1,9 @@
-// frontend/src/pages/ExpensesPage.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  FaPlus, FaSearch, FaFilter, FaDownload, 
-  FaEye, FaEdit, FaTrash, FaTimes,
-  FaSort, FaSortUp, FaSortDown, FaFileExport,
+  FaPlus, FaSearch, FaFilter, FaEye, FaEdit, FaTrash, 
+  FaTimes, FaSort, FaSortUp, FaSortDown, FaFileExport,
   FaChevronLeft, FaChevronRight
 } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,7 +12,6 @@ function ExpensesPage() {
   const navigate = useNavigate();
   const { authAxios, user } = useAuth();
   
-  // State management
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,7 +37,6 @@ function ExpensesPage() {
     receipt: null
   });
 
-  // Fetch expenses on component mount
   useEffect(() => {
     fetchExpenses();
   }, []);
@@ -64,7 +60,6 @@ function ExpensesPage() {
     try {
       setLoading(true);
       
-      // Create FormData for file upload
       const formData = new FormData();
       Object.keys(newExpense).forEach(key => {
         if (key === 'receipt' && newExpense.receipt) {
@@ -123,7 +118,6 @@ function ExpensesPage() {
     }));
   };
 
-  // Filtering and sorting logic
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = 
       expense.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,7 +135,6 @@ function ExpensesPage() {
     return matchesSearch && matchesStatus && matchesCategory && matchesDateRange;
   });
 
-  // Sorting
   const sortedExpenses = [...filteredExpenses].sort((a, b) => {
     if (sortConfig.key) {
       let aValue = a[sortConfig.key];
@@ -158,7 +151,6 @@ function ExpensesPage() {
     return 0;
   });
 
-  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedExpenses.slice(indexOfFirstItem, indexOfLastItem);
@@ -204,7 +196,6 @@ function ExpensesPage() {
 
   return (
     <div className="expenses-page">
-      {/* Header */}
       <div className="page-header">
         <div>
           <h1>Expenses</h1>
@@ -223,7 +214,6 @@ function ExpensesPage() {
         </div>
       </div>
 
-      {/* Search and Filter Bar */}
       <div className="search-filter-bar">
         <div className="search-wrapper">
           <FaSearch className="search-icon" />
@@ -255,7 +245,6 @@ function ExpensesPage() {
         </select>
       </div>
 
-      {/* Advanced Filters */}
       <AnimatePresence>
         {showFilters && (
           <motion.div 
@@ -304,7 +293,6 @@ function ExpensesPage() {
         )}
       </AnimatePresence>
 
-      {/* Add Expense Modal */}
       <AnimatePresence>
         {showAddForm && (
           <motion.div 
@@ -333,7 +321,6 @@ function ExpensesPage() {
                   <label>Subject *</label>
                   <input
                     type="text"
-                    name="subject"
                     value={newExpense.subject}
                     onChange={(e) => setNewExpense(prev => ({ ...prev, subject: e.target.value }))}
                     required
@@ -346,7 +333,6 @@ function ExpensesPage() {
                     <label>Amount (€) *</label>
                     <input
                       type="number"
-                      name="amount"
                       step="0.01"
                       min="0"
                       value={newExpense.amount}
@@ -359,7 +345,6 @@ function ExpensesPage() {
                   <div className="form-group">
                     <label>Category *</label>
                     <select 
-                      name="category" 
                       value={newExpense.category}
                       onChange={(e) => setNewExpense(prev => ({ ...prev, category: e.target.value }))}
                       required
@@ -380,7 +365,6 @@ function ExpensesPage() {
                     <label>Team/Department</label>
                     <input
                       type="text"
-                      name="team"
                       value={newExpense.team}
                       onChange={(e) => setNewExpense(prev => ({ ...prev, team: e.target.value }))}
                       placeholder="Your department"
@@ -391,7 +375,6 @@ function ExpensesPage() {
                     <label>Date</label>
                     <input
                       type="date"
-                      name="date"
                       value={newExpense.date}
                       onChange={(e) => setNewExpense(prev => ({ ...prev, date: e.target.value }))}
                     />
@@ -401,7 +384,6 @@ function ExpensesPage() {
                 <div className="form-group">
                   <label>Description</label>
                   <textarea
-                    name="description"
                     value={newExpense.description}
                     onChange={(e) => setNewExpense(prev => ({ ...prev, description: e.target.value }))}
                     rows="3"
@@ -413,7 +395,6 @@ function ExpensesPage() {
                   <label>Receipt (Optional)</label>
                   <input
                     type="file"
-                    name="receipt"
                     onChange={handleFileChange}
                     accept="image/*,.pdf"
                     className="file-input"
@@ -435,7 +416,6 @@ function ExpensesPage() {
         )}
       </AnimatePresence>
 
-      {/* Expenses Table */}
       <div className="table-container">
         <table className="expenses-table">
           <thead>
@@ -523,7 +503,6 @@ function ExpensesPage() {
         </table>
       </div>
 
-      {/* Pagination */}
       {sortedExpenses.length > 0 && (
         <div className="pagination">
           <button 

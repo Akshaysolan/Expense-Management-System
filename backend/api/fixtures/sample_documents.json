@@ -1,0 +1,50 @@
+[
+  {
+    "model": "api.document",
+    "pk": 1,
+    "fields": {
+      "title": "Expense Policy Guide",
+      "icon": "📋",
+      "description": "Complete guide to company expense policies and procedures.",
+      "external_url": "/docs/expense-policy.pdf",
+      "order": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.document",
+    "pk": 2,
+    "fields": {
+      "title": "Getting Started",
+      "icon": "🚀",
+      "description": "Quick introduction to ExpensePro for new employees.",
+      "external_url": "/docs/getting-started.pdf",
+      "order": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.document",
+    "pk": 3,
+    "fields": {
+      "title": "API Documentation",
+      "icon": "🔌",
+      "description": "Technical documentation for integrating with ExpensePro API.",
+      "external_url": "/docs/api-reference.pdf",
+      "order": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.document",
+    "pk": 4,
+    "fields": {
+      "title": "Mobile App Guide",
+      "icon": "📱",
+      "description": "How to use ExpensePro on iOS and Android devices.",
+      "external_url": "/docs/mobile-guide.pdf",
+      "order": 4,
+      "is_active": true
+    }
+  }
+]

@@ -1,4 +1,3 @@
-// frontend/src/pages/ReportsPage.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -9,8 +8,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-
-// ─── Static data ──────────────────────────────────────────────────────────────
 const REPORT_CARDS = [
   {
     id:          1,
@@ -70,50 +67,12 @@ const QUICK_RANGES = [
   { label: 'Custom Range', value: 'custom'     },
 ];
 
-const REPORT_TYPES = [
-  { label: 'Expense Reports', value: 'expense' },
-  { label: 'Trip Reports',    value: 'trip'    },
-];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function getDateRange(rangeValue, customRange) {
-  const today = new Date();
-
-  switch (rangeValue) {
-    case 'month': {
-      const s = new Date(today.getFullYear(), today.getMonth(), 1);
-      const e = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      return { start: s.toISOString().split('T')[0], end: e.toISOString().split('T')[0] };
-    }
-    case 'last-month': {
-      const s = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-      const e = new Date(today.getFullYear(), today.getMonth(), 0);
-      return { start: s.toISOString().split('T')[0], end: e.toISOString().split('T')[0] };
-    }
-    case 'quarter': {
-      const q = Math.floor(today.getMonth() / 3);
-      const s = new Date(today.getFullYear(), q * 3, 1);
-      const e = new Date(today.getFullYear(), (q + 1) * 3, 0);
-      return { start: s.toISOString().split('T')[0], end: e.toISOString().split('T')[0] };
-    }
-    case 'year':
-      return {
-        start: `${today.getFullYear()}-01-01`,
-        end:   `${today.getFullYear()}-12-31`,
-      };
-    default:
-      return customRange;
-  }
-}
-
 function formatDate(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
   });
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ReportCard({ card, isGenerating, onGenerate }) {
   const Icon = card.icon;
@@ -124,7 +83,6 @@ function ReportCard({ card, isGenerating, onGenerate }) {
       whileHover={{ y: -4, scale: 1.01 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-      aria-label={`${card.title} report card`}
     >
       <div className="rp-card__icon-wrap" aria-hidden="true">
         <Icon size={22} strokeWidth={2} />
@@ -138,17 +96,16 @@ function ReportCard({ card, isGenerating, onGenerate }) {
           className={`rp-card__gen-btn ${isGenerating ? 'rp-card__gen-btn--busy' : ''}`}
           onClick={() => onGenerate(card)}
           disabled={isGenerating}
-          aria-label={isGenerating ? `Generating ${card.title}` : `Generate ${card.title}`}
         >
           {isGenerating ? (
             <>
-              <Loader size={14} className="rp-spin" aria-hidden="true" />
+              <Loader size={14} className="rp-spin" />
               <span>Generating…</span>
             </>
           ) : (
             <>
               <span>Generate Report</span>
-              <ChevronRight size={15} aria-hidden="true" />
+              <ChevronRight size={15} />
             </>
           )}
         </button>
@@ -191,7 +148,6 @@ function RecentReportRow({ report, onDownload }) {
       <button
         className="rp-recent-item__dl-btn"
         onClick={() => onDownload(report.report_id)}
-        aria-label={`Download ${report.title}`}
         title="Download"
       >
         <Download size={15} />
@@ -200,7 +156,6 @@ function RecentReportRow({ report, onDownload }) {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 function ReportsPage() {
   const { authAxios } = useAuth();
 
@@ -214,7 +169,6 @@ function ReportsPage() {
 
   useEffect(() => { fetchRecentReports(); }, []);
 
-  // ── API ────────────────────────────────────────────────────────────────────
   const fetchRecentReports = async () => {
     try {
       setLoading(true);
@@ -231,11 +185,10 @@ function ReportsPage() {
   const handleGenerateReport = async (card) => {
     try {
       setGenerating(card.id);
-      const range = getDateRange(dateRange, customDateRange);
       await authAxios.post('/reports/generate/', {
         report_type:      card.type,
-        date_range_start: range.start,
-        date_range_end:   range.end,
+        date_range_start: customDateRange.start,
+        date_range_end:   customDateRange.end,
         format:           'pdf',
         filters:          {},
       });
@@ -265,12 +218,10 @@ function ReportsPage() {
     }
   };
 
-  // ── Derived ────────────────────────────────────────────────────────────────
   const visibleCards = REPORT_CARDS.filter((c) =>
     reportType === 'expense' ? !c.type.includes('travel') : c.type.includes('travel')
   );
 
-  // ── Initial loading screen ─────────────────────────────────────────────────
   if (loading && recentReports.length === 0) {
     return (
       <div className="rp-loading-screen" role="status" aria-label="Loading reports">
@@ -282,8 +233,6 @@ function ReportsPage() {
 
   return (
     <main className="rp-page">
-
-      {/* ── Page header ─────────────────────────────────────────────────── */}
       <motion.div
         className="rp-page-header"
         initial={{ opacity: 0, y: -16 }}
@@ -291,12 +240,11 @@ function ReportsPage() {
         transition={{ type: 'spring', stiffness: 280, damping: 26 }}
       >
         <div>
-          <h1 className="rp-page-header__title">Reports &amp; Analytics</h1>
+          <h1 className="rp-page-header__title">Reports & Analytics</h1>
           <p className="rp-page-header__subtitle">Generate, filter and download expense reports</p>
         </div>
       </motion.div>
 
-      {/* ── Error banner ────────────────────────────────────────────────── */}
       <AnimatePresence>
         {error && (
           <motion.div
@@ -306,107 +254,44 @@ function ReportsPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
           >
-            <AlertCircle size={18} aria-hidden="true" />
+            <AlertCircle size={18} />
             <span>{error}</span>
-            <button
-              className="rp-error__close"
-              onClick={() => setError(null)}
-              aria-label="Dismiss error"
-            >
-              ×
-            </button>
+            <button className="rp-error__close" onClick={() => setError(null)}>×</button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Filters panel ───────────────────────────────────────────────── */}
       <motion.section
         className="rp-filters"
         aria-label="Report filters"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08, type: 'spring', stiffness: 260, damping: 26 }}
+        transition={{ delay: 0.08 }}
       >
-        {/* Date range */}
         <div className="rp-filters__group">
-          <label className="rp-filters__label" id="date-range-label">Date Range</label>
-          <div className="rp-filters__pills" role="group" aria-labelledby="date-range-label">
-            {QUICK_RANGES.map((r) => (
-              <button
-                key={r.value}
-                className={`rp-pill ${dateRange === r.value ? 'rp-pill--active' : ''}`}
-                onClick={() => setDateRange(r.value)}
-                aria-pressed={dateRange === r.value}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Custom date inputs */}
-        <AnimatePresence>
-          {dateRange === 'custom' && (
-            <motion.div
-              className="rp-custom-range"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
+          <label className="rp-filters__label">Report Type</label>
+          <div className="rp-filters__pills">
+            <button
+              className={`rp-pill ${reportType === 'expense' ? 'rp-pill--active' : ''}`}
+              onClick={() => setReportType('expense')}
             >
-              <label className="rp-sr-only" htmlFor="custom-start">Start date</label>
-              <input
-                id="custom-start"
-                type="date"
-                className="rp-date-input"
-                value={customDateRange.start}
-                onChange={(e) => setCustomDateRange(p => ({ ...p, start: e.target.value }))}
-              />
-              <span className="rp-custom-range__sep" aria-hidden="true">→</span>
-              <label className="rp-sr-only" htmlFor="custom-end">End date</label>
-              <input
-                id="custom-end"
-                type="date"
-                className="rp-date-input"
-                value={customDateRange.end}
-                onChange={(e) => setCustomDateRange(p => ({ ...p, end: e.target.value }))}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Report type */}
-        <div className="rp-filters__group">
-          <label className="rp-filters__label" id="report-type-label">Report Type</label>
-          <div className="rp-filters__pills" role="group" aria-labelledby="report-type-label">
-            {REPORT_TYPES.map((t) => (
-              <button
-                key={t.value}
-                className={`rp-pill ${reportType === t.value ? 'rp-pill--active' : ''}`}
-                onClick={() => setReportType(t.value)}
-                aria-pressed={reportType === t.value}
-              >
-                {t.label}
-              </button>
-            ))}
+              Expense Reports
+            </button>
+            <button
+              className={`rp-pill ${reportType === 'trip' ? 'rp-pill--active' : ''}`}
+              onClick={() => setReportType('trip')}
+            >
+              Trip Reports
+            </button>
           </div>
         </div>
 
-        {/* Apply */}
-        <button
-          className="rp-apply-btn"
-          onClick={fetchRecentReports}
-          disabled={loading}
-          aria-label="Apply filters and refresh reports"
-        >
-          {loading
-            ? <Loader size={15} className="rp-spin" aria-hidden="true" />
-            : <Filter size={15} aria-hidden="true" />}
-          Apply Filters
+        <button className="rp-apply-btn" onClick={fetchRecentReports} disabled={loading}>
+          {loading ? <Loader size={15} className="rp-spin" /> : <RefreshCw size={15} />}
+          Refresh
         </button>
       </motion.section>
 
-      {/* ── Report cards grid ────────────────────────────────────────────── */}
       <section aria-label="Available report types">
         <div className="rp-cards-grid">
           {visibleCards.map((card, idx) => (
@@ -414,7 +299,7 @@ function ReportsPage() {
               key={card.id}
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.06, type: 'spring', stiffness: 280, damping: 24 }}
+              transition={{ delay: idx * 0.06 }}
             >
               <ReportCard
                 card={card}
@@ -426,23 +311,17 @@ function ReportsPage() {
         </div>
       </section>
 
-      {/* ── Recent reports ───────────────────────────────────────────────── */}
       <motion.section
         className="rp-recent"
         aria-label="Recently generated reports"
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, type: 'spring', stiffness: 260, damping: 26 }}
+        transition={{ delay: 0.2 }}
       >
         <div className="rp-recent__header">
           <h2 className="rp-recent__title">Recently Generated</h2>
-          <button
-            className="rp-recent__refresh"
-            onClick={fetchRecentReports}
-            disabled={loading}
-            aria-label="Refresh recent reports"
-          >
-            <RefreshCw size={14} className={loading ? 'rp-spin' : ''} aria-hidden="true" />
+          <button className="rp-recent__refresh" onClick={fetchRecentReports} disabled={loading}>
+            <RefreshCw size={14} className={loading ? 'rp-spin' : ''} />
             Refresh
           </button>
         </div>
@@ -459,13 +338,12 @@ function ReportsPage() {
           </div>
         ) : (
           <div className="rp-recent__empty" role="status">
-            <FileText size={36} aria-hidden="true" />
+            <FileText size={36} />
             <p>No reports generated yet</p>
             <span>Generate a report above to see it here</span>
           </div>
         )}
       </motion.section>
-
     </main>
   );
 }

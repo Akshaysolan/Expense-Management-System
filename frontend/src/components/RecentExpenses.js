@@ -1,17 +1,11 @@
-// frontend/src/components/RecentExpenses.js
 import React from 'react';
 
 function RecentExpenses({ expenses }) {
-  // Helper function to format amount safely
   const formatAmount = (amount) => {
-    // Convert to number if it's a string
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    
-    // Check if it's a valid number
     if (isNaN(numAmount)) {
       return '€0.00';
     }
-    
     return `€${numAmount.toFixed(2)}`;
   };
 

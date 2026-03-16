@@ -1,4 +1,3 @@
-// frontend/src/pages/MessagesPage.js
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -139,7 +138,6 @@ function MessagesPage() {
   return (
     <>
       <div className="msg-page">
-        {/* Sidebar */}
         <div className="msg-sidebar">
           <div className="msg-sidebar__top">
             <div className="msg-sidebar__title">Messages</div>
@@ -157,7 +155,6 @@ function MessagesPage() {
           </div>
         </div>
 
-        {/* Thread List */}
         <div className={`msg-list-panel ${isMobileDetail ? 'mobile-hidden' : ''}`}>
           <div className="msg-list-search">
             <Search size={14} className="srch-icon" />
@@ -191,7 +188,6 @@ function MessagesPage() {
           </div>
         </div>
 
-        {/* Detail Panel */}
         <div className="msg-detail-panel">
           {!selected ? (
             <div className="msg-detail-empty">
@@ -260,7 +256,6 @@ function MessagesPage() {
         </div>
       </div>
 
-      {/* Compose Modal */}
       <AnimatePresence>
         {composing && (
           <motion.div className="compose-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setComposing(false)}>
@@ -270,7 +265,7 @@ function MessagesPage() {
                 <button className="compose-close" onClick={() => setComposing(false)}>×</button>
               </div>
               <div className="compose-field">
-                <input placeholder="To (email or name)" value={draft.to} onChange={e => setDraft(d => ({ ...d, to: e.target.value }))} />
+                <input placeholder="To (email)" value={draft.to} onChange={e => setDraft(d => ({ ...d, to: e.target.value }))} />
               </div>
               <div className="compose-field">
                 <input placeholder="Subject" value={draft.subject} onChange={e => setDraft(d => ({ ...d, subject: e.target.value }))} />

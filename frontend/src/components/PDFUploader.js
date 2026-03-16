@@ -1,4 +1,3 @@
-// frontend/src/components/PDFUploader.js
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FaCloudUploadAlt } from 'react-icons/fa';
@@ -67,7 +66,7 @@ function PDFUploader({ onUpload }) {
         
         {uploading ? (
           <div className="uploading-status">
-            <div className="spinner"></div>
+            <div className="loading-spinner"></div>
             <p>Uploading and processing PDF...</p>
           </div>
         ) : isDragActive ? (

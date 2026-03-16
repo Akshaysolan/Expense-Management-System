@@ -1,4 +1,3 @@
-// frontend/src/pages/AnalyticsPage.js
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -13,10 +12,8 @@ import {
 } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
 
-
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#64748b'];
 
-// ─── Stat Card ────────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, change, color, prefix = '' }) {
   const isPositive = change >= 0;
   return (
@@ -46,7 +43,6 @@ function StatCard({ icon: Icon, label, value, change, color, prefix = '' }) {
   );
 }
 
-// ─── Custom Tooltip ───────────────────────────────────────────
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
@@ -61,7 +57,6 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────
 function AnalyticsPage() {
   const { authAxios } = useAuth();
 
@@ -110,8 +105,6 @@ function AnalyticsPage() {
 
   return (
     <div className="an-page">
-
-      {/* ── Header ──────────────────────────────────────── */}
       <div className="an-header">
         <div>
           <h1 className="an-title">Analytics</h1>
@@ -138,7 +131,6 @@ function AnalyticsPage() {
         </div>
       </div>
 
-      {/* ── Stats ───────────────────────────────────────── */}
       <div className="an-stats-grid">
         <StatCard icon={DollarSign}  label="Total Expenses"   value={data.summary.total_amount}     change={data.summary.amount_change}   color="#3b82f6" prefix="€" />
         <StatCard icon={BarChart3}   label="Total Claims"     value={data.summary.total_count}      change={data.summary.count_change}    color="#10b981" />
@@ -148,10 +140,7 @@ function AnalyticsPage() {
         <StatCard icon={Calendar}    label="Avg per Employee" value={data.summary.avg_per_employee} change={data.summary.avg_change}      color="#14b8a6" prefix="€" />
       </div>
 
-      {/* ── Charts row 1 ────────────────────────────────── */}
       <div className="an-charts-grid">
-
-        {/* Monthly trend */}
         <div className="an-chart-card col-8">
           <div className="an-chart-title">Monthly Expense Trend</div>
           <ResponsiveContainer width="100%" height={260}>
@@ -159,11 +148,11 @@ function AnalyticsPage() {
               <defs>
                 <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}    />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradApproved" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%"  stopColor="#10b981" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}    />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border, #f3f4f6)" />
@@ -171,13 +160,12 @@ function AnalyticsPage() {
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Area type="monotone" dataKey="total"    name="Total"    stroke="#3b82f6" strokeWidth={2} fill="url(#gradTotal)"    />
+              <Area type="monotone" dataKey="total"    name="Total"    stroke="#3b82f6" strokeWidth={2} fill="url(#gradTotal)" />
               <Area type="monotone" dataKey="approved" name="Approved" stroke="#10b981" strokeWidth={2} fill="url(#gradApproved)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Category pie */}
         <div className="an-chart-card col-4">
           <div className="an-chart-title">By Category</div>
           <ResponsiveContainer width="100%" height={260}>
@@ -201,10 +189,7 @@ function AnalyticsPage() {
         </div>
       </div>
 
-      {/* ── Charts row 2 ────────────────────────────────── */}
       <div className="an-charts-grid">
-
-        {/* Department bar */}
         <div className="an-chart-card col-6">
           <div className="an-chart-title">Department Spending</div>
           <ResponsiveContainer width="100%" height={220}>
@@ -222,7 +207,6 @@ function AnalyticsPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Status breakdown */}
         <div className="an-chart-card col-6">
           <div className="an-chart-title">Status Breakdown</div>
           <ResponsiveContainer width="100%" height={220}>
@@ -233,9 +217,7 @@ function AnalyticsPage() {
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="count" name="Count" radius={[0, 5, 5, 0]}>
                 {data.by_status.map((s, i) => {
-                  const c =
-                    s.status === 'approved' ? '#10b981' :
-                    s.status === 'rejected' ? '#ef4444' : '#f59e0b';
+                  const c = s.status === 'Approved' ? '#10b981' : s.status === 'Rejected' ? '#ef4444' : '#f59e0b';
                   return <Cell key={i} fill={c} />;
                 })}
               </Bar>
@@ -244,10 +226,7 @@ function AnalyticsPage() {
         </div>
       </div>
 
-      {/* ── Bottom row ───────────────────────────────────── */}
       <div className="an-charts-grid">
-
-        {/* Top spenders */}
         <div className="an-chart-card col-6">
           <div className="an-chart-title">Top Spenders</div>
           <table className="an-top-table">
@@ -272,7 +251,6 @@ function AnalyticsPage() {
           </table>
         </div>
 
-        {/* Category breakdown */}
         <div className="an-chart-card col-6">
           <div className="an-chart-title">Category Breakdown</div>
           <div className="an-category-list">

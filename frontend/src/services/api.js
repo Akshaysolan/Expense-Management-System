@@ -1,4 +1,3 @@
-// frontend/src/services/api.js
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -13,7 +12,7 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -29,7 +28,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized
       toast.error('Session expired. Please login again.');
       window.location.href = '/login';
     }

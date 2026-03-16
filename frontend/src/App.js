@@ -1,4 +1,3 @@
-// frontend/src/App.js
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
@@ -29,7 +28,7 @@ import NotificationsPage from './pages/NotificationsPage';
 import MessagesPage from './pages/MessagesPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 
-// ── Route guard: redirect to /login if not authenticated ──
+// Route guard: redirect to /login if not authenticated
 function PrivateRoute({ children, requiredRole = null }) {
   const { user, loading } = useAuth();
 
@@ -54,14 +53,14 @@ function PrivateRoute({ children, requiredRole = null }) {
   return children;
 }
 
-// ── Route guard: redirect away from auth pages if already logged in ──
+// Route guard: redirect away from auth pages if already logged in
 function PublicRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
   return user ? <Navigate to="/dashboard" replace /> : children;
 }
 
-// ── Main authenticated layout ───────────────────────────────
+// Main authenticated layout
 function AppLayout() {
   const [dashboardData, setDashboardData] = useState({
     expenses: [],
@@ -98,18 +97,6 @@ function AppLayout() {
   };
 
   const closeMobileSidebar = () => setMobileSidebarOpen(false);
-
-  useEffect(() => {
-    const root = document.querySelector('.app');
-    if (!root) return;
-    if (isMobile) {
-      root.classList.remove('sidebar-collapsed');
-    } else if (sidebarCollapsed) {
-      root.classList.add('sidebar-collapsed');
-    } else {
-      root.classList.remove('sidebar-collapsed');
-    }
-  }, [sidebarCollapsed, isMobile]);
 
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed));
@@ -180,7 +167,7 @@ function AppLayout() {
   }
 
   return (
-    <div className={`app ${!isMobile && sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div className="app">
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         isMobile={isMobile}
@@ -203,7 +190,7 @@ function AppLayout() {
 
             {/* Expense Routes */}
             <Route path="/expenses" element={
-              <ExpensesPage expenses={dashboardData.expenses} />
+              <ExpensesPage />
             } />
             <Route path="/expenses/:id" element={<ExpenseDetailPage />} />
 
@@ -240,24 +227,30 @@ function AppLayout() {
   );
 }
 
-// ── Admin layout ────────────────────────────────────────────
+// Admin layout
 function AdminLayout() {
   return (
-    <div className="admin-app">
-      <Routes>
-        <Route path="/" element={<AdminDashboard />} />
-        <Route path="/users" element={<div>User Management Page</div>} />
-        <Route path="/users/:id" element={<div>User Detail Page</div>} />
-        <Route path="/teams" element={<div>Team Management Page</div>} />
-        <Route path="/teams/:id" element={<div>Team Detail Page</div>} />
-        <Route path="/logs" element={<AuditLogsPage />} />
-        <Route path="/settings" element={<div>System Settings Page</div>} />
-      </Routes>
+    <div className="app">
+      <Sidebar isCollapsed={false} isMobile={false} closeMobileSidebar={() => {}} />
+      <main className="main-content">
+        <Header isCollapsed={false} toggleSidebar={() => {}} isMobile={false} toggleMobileSidebar={() => {}} />
+        <div className="content-wrapper">
+          <Routes>
+            <Route path="/" element={<AdminDashboard />} />
+            <Route path="/users" element={<div>User Management Page</div>} />
+            <Route path="/users/:id" element={<div>User Detail Page</div>} />
+            <Route path="/teams" element={<div>Team Management Page</div>} />
+            <Route path="/teams/:id" element={<div>Team Detail Page</div>} />
+            <Route path="/logs" element={<AuditLogsPage />} />
+            <Route path="/settings" element={<div>System Settings Page</div>} />
+          </Routes>
+        </div>
+      </main>
     </div>
   );
 }
 
-// ── Root: wraps everything in providers + defines top-level routes ──
+// Root: wraps everything in providers + defines top-level routes
 function App() {
   return (
     <ThemeProvider>

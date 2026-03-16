@@ -1,5 +1,4 @@
-// frontend/src/components/PendingTasks.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Printer,
@@ -13,8 +12,8 @@ import {
   CheckCircle2,
   Clock,
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
-// ─── task metadata (icon, color-key, label) ───────────────────────────────
 const TASK_META = {
   'Printing Approvals':  { icon: Printer,      color: 'amber',  label: 'Awaiting your approval' },
   'Pending Approvals':   { icon: CheckCircle2, color: 'amber',  label: 'Require action' },
@@ -28,17 +27,15 @@ const TASK_META = {
 
 const DEFAULT_META = { icon: AlertCircle, color: 'slate', label: 'Pending action' };
 
-// ─── colour tokens ────────────────────────────────────────────────────────
 const COLOR_TOKENS = {
   amber:   { bg: 'var(--task-amber-bg)',   fg: 'var(--task-amber-fg)',   bar: 'var(--task-amber-bar)'   },
   sky:     { bg: 'var(--task-sky-bg)',     fg: 'var(--task-sky-fg)',     bar: 'var(--task-sky-bar)'     },
   rose:    { bg: 'var(--task-rose-bg)',    fg: 'var(--task-rose-fg)',    bar: 'var(--task-rose-bar)'    },
-  violet:  { bg: 'var(--task-violet-bg)', fg: 'var(--task-violet-fg)', bar: 'var(--task-violet-bar)' },
-  emerald: { bg: 'var(--task-emerald-bg)',fg: 'var(--task-emerald-fg)',bar: 'var(--task-emerald-bar)' },
-  slate:   { bg: 'var(--task-slate-bg)',  fg: 'var(--task-slate-fg)',  bar: 'var(--task-slate-bar)'  },
+  violet:  { bg: 'var(--task-violet-bg)',   fg: 'var(--task-violet-fg)',  bar: 'var(--task-violet-bar)'  },
+  emerald: { bg: 'var(--task-emerald-bg)',  fg: 'var(--task-emerald-fg)', bar: 'var(--task-emerald-bar)' },
+  slate:   { bg: 'var(--task-slate-bg)',    fg: 'var(--task-slate-fg)',   bar: 'var(--task-slate-bar)'   },
 };
 
-// ─── helpers ──────────────────────────────────────────────────────────────
 function formatValue(task) {
   if (task.value !== undefined && task.value !== null) {
     const n = typeof task.value === 'string' ? parseFloat(task.value) : task.value;
@@ -52,15 +49,14 @@ function isUrgent(task) {
   return count > 3;
 }
 
-// ─── sub-component: single task row ──────────────────────────────────────
 function TaskRow({ task, index, maxCount, onClick, isExpanded }) {
-  const name   = task.task_name || 'Task';
-  const meta   = TASK_META[name] ?? DEFAULT_META;
+  const name = task.task_name || 'Task';
+  const meta = TASK_META[name] ?? DEFAULT_META;
   const tokens = COLOR_TOKENS[meta.color];
-  const Icon   = meta.icon;
-  const val    = formatValue(task);
-  const count  = task.count ?? 0;
-  const pct    = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+  const Icon = meta.icon;
+  const val = formatValue(task);
+  const count = task.count ?? 0;
+  const pct = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
   const urgent = isUrgent(task);
 
   return (
@@ -73,15 +69,11 @@ function TaskRow({ task, index, maxCount, onClick, isExpanded }) {
       onClick={() => onClick(index)}
       layout
     >
-      {/* left accent stripe */}
       <span className="pt-row__stripe" />
-
-      {/* icon bubble */}
       <span className="pt-row__icon-wrap">
         <Icon size={16} strokeWidth={2.2} />
       </span>
 
-      {/* text */}
       <div className="pt-row__body">
         <div className="pt-row__top">
           <span className="pt-row__name">{name}</span>
@@ -98,7 +90,6 @@ function TaskRow({ task, index, maxCount, onClick, isExpanded }) {
           <span className="pt-row__value">{val}</span>
         </div>
 
-        {/* progress bar */}
         <div className="pt-row__bar-track">
           <motion.div
             className="pt-row__bar-fill"
@@ -108,7 +99,6 @@ function TaskRow({ task, index, maxCount, onClick, isExpanded }) {
           />
         </div>
 
-        {/* expanded detail */}
         <AnimatePresence>
           {isExpanded && (
             <motion.p
@@ -125,7 +115,6 @@ function TaskRow({ task, index, maxCount, onClick, isExpanded }) {
         </AnimatePresence>
       </div>
 
-      {/* chevron */}
       <motion.span
         className="pt-row__chevron"
         animate={{ rotate: isExpanded ? 90 : 0 }}
@@ -137,25 +126,64 @@ function TaskRow({ task, index, maxCount, onClick, isExpanded }) {
   );
 }
 
-// ─── main component ───────────────────────────────────────────────────────
-function PendingTasks({ tasks, onViewAll }) {
+function PendingTasks({ tasks: propTasks, onViewAll }) {
+  const { authAxios } = useAuth();
   const [expandedIdx, setExpandedIdx] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const defaultTasks = [
-    { task_name: 'Printing Approvals',   count: 5 },
-    { task_name: 'New Trips Registered', count: 1 },
-    { task_name: 'Unreported Expenses',  count: 4 },
-    { task_name: 'Upcoming Expenses',    count: 0 },
-    { task_name: 'Unreported Advances',  count: 0, value: 0.00 },
+  useEffect(() => {
+    if (propTasks && propTasks.length > 0) {
+      setTasks(propTasks);
+      setLoading(false);
+    } else {
+      fetchTasks();
+    }
+  }, [propTasks]);
+
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      const response = await authAxios.get('/pending-tasks/');
+      setTasks(response.data);
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+      // Fallback to default tasks if API fails
+      setTasks([
+        { id: 1, task_name: 'Printing Approvals', count: 0 },
+        { id: 2, task_name: 'New Trips Registered', count: 0 },
+        { id: 3, task_name: 'Unreported Expenses', count: 0 },
+        { id: 4, task_name: 'Upcoming Expenses', count: 0 },
+        { id: 5, task_name: 'Unreported Advances', count: 0, value: 0 },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const displayTasks = tasks.length > 0 ? tasks : [
+    { id: 1, task_name: 'Printing Approvals', count: 0 },
+    { id: 2, task_name: 'New Trips Registered', count: 0 },
+    { id: 3, task_name: 'Unreported Expenses', count: 0 },
+    { id: 4, task_name: 'Upcoming Expenses', count: 0 },
+    { id: 5, task_name: 'Unreported Advances', count: 0, value: 0 },
   ];
-
-  const displayTasks = tasks && tasks.length > 0 ? tasks : defaultTasks;
-  const totalCount   = displayTasks.reduce((s, t) => s + (t.count ?? 0), 0);
-  const maxCount     = Math.max(...displayTasks.map(t => t.count ?? 0), 1);
-  const urgentCount  = displayTasks.filter(isUrgent).length;
+  
+  const totalCount = displayTasks.reduce((s, t) => s + (t.count ?? 0), 0);
+  const maxCount = Math.max(...displayTasks.map(t => t.count ?? 0), 1);
+  const urgentCount = displayTasks.filter(isUrgent).length;
 
   function toggle(idx) {
     setExpandedIdx(prev => (prev === idx ? null : idx));
+  }
+
+  if (loading) {
+    return (
+      <div className="pt-card">
+        <div className="loading-spinner-small" />
+        <p>Loading tasks...</p>
+      </div>
+    );
   }
 
   return (
@@ -165,7 +193,6 @@ function PendingTasks({ tasks, onViewAll }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 26 }}
     >
-      {/* ── header ── */}
       <div className="pt-header">
         <div className="pt-header__left">
           <span className="pt-header__icon-ring">
@@ -197,7 +224,6 @@ function PendingTasks({ tasks, onViewAll }) {
         </div>
       </div>
 
-      {/* ── summary pills ── */}
       <div className="pt-summary">
         {displayTasks.filter(t => (t.count ?? 0) > 0).slice(0, 3).map((t, i) => {
           const m = TASK_META[t.task_name] ?? DEFAULT_META;
@@ -217,10 +243,8 @@ function PendingTasks({ tasks, onViewAll }) {
         })}
       </div>
 
-      {/* ── divider ── */}
       <div className="pt-divider" />
 
-      {/* ── task rows ── */}
       <div className="pt-list">
         {displayTasks.map((task, idx) => (
           <TaskRow
@@ -234,7 +258,6 @@ function PendingTasks({ tasks, onViewAll }) {
         ))}
       </div>
 
-      {/* ── footer ── */}
       <div className="pt-footer">
         <span className="pt-footer__label">
           <CheckCircle2 size={12} /> Auto-refreshes every 5 min

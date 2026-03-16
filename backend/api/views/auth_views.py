@@ -1,4 +1,3 @@
-# api/views/auth_views.py
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -7,16 +6,14 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
-from ..serializers import (
+from api.serializers.auth import (
     RegisterSerializer, LoginSerializer, ProfileSerializer, 
     ProfileUpdateSerializer, ChangePasswordSerializer
 )
-from ..models import Employee
+from api.models.base import Employee
 import logging
 
 logger = logging.getLogger(__name__)
-
-# ========== REGISTRATION ==========
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -30,10 +27,8 @@ def register(request):
             user = serializer.save()
             logger.info(f"User created successfully: {user.email}")
             
-            # Generate tokens
             refresh = RefreshToken.for_user(user)
             
-            # Get employee profile
             try:
                 employee = Employee.objects.get(user=user)
                 profile_serializer = ProfileSerializer(employee)
@@ -50,7 +45,6 @@ def register(request):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         
-        # Return detailed validation errors
         logger.warning(f"Registration validation failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -60,8 +54,6 @@ def register(request):
             {'non_field_errors': [f'Registration failed: {str(e)}']},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-# ========== LOGIN ==========
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -78,7 +70,6 @@ def login(request):
                 'non_field_errors': ['Please provide both email and password.']
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Find user by email
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
@@ -87,7 +78,6 @@ def login(request):
                 'non_field_errors': ['Invalid email or password.']
             }, status=status.HTTP_401_UNAUTHORIZED)
         
-        # Authenticate
         user = authenticate(username=user.username, password=password)
         if not user:
             logger.warning(f"Authentication failed for email: {email}")
@@ -95,22 +85,18 @@ def login(request):
                 'non_field_errors': ['Invalid email or password.']
             }, status=status.HTTP_401_UNAUTHORIZED)
         
-        # Check if user is active
         if not user.is_active:
             logger.warning(f"Inactive account attempt: {email}")
             return Response({
                 'non_field_errors': ['Account is disabled.']
             }, status=status.HTTP_401_UNAUTHORIZED)
         
-        # Generate tokens
         refresh = RefreshToken.for_user(user)
         
-        # Get employee profile
         try:
             employee = Employee.objects.get(user=user)
             profile_serializer = ProfileSerializer(employee)
         except Employee.DoesNotExist:
-            # Create employee profile if it doesn't exist
             logger.info(f"Creating employee profile for existing user: {email}")
             employee = Employee.objects.create(
                 user=user,
@@ -134,8 +120,6 @@ def login(request):
             {'non_field_errors': [f'Login failed: {str(e)}']},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-# ========== LOGOUT ==========
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -168,8 +152,6 @@ def logout(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-# ========== PROFILE ==========
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def profile(request):
@@ -192,8 +174,6 @@ def profile(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-# ========== UPDATE PROFILE ==========
-
 @api_view(['PATCH', 'PUT'])
 @permission_classes([IsAuthenticated])
 def update_profile(request):
@@ -204,7 +184,6 @@ def update_profile(request):
         
         if serializer.is_valid():
             serializer.save()
-            # Return updated full profile
             updated_serializer = ProfileSerializer(employee)
             logger.info(f"Profile updated for user {request.user.email}")
             return Response(updated_serializer.data)
@@ -225,8 +204,6 @@ def update_profile(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-# ========== CHANGE PASSWORD ==========
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def change_password(request):
@@ -241,18 +218,15 @@ def change_password(request):
         old_password = serializer.validated_data.get('old_password')
         new_password = serializer.validated_data.get('new_password')
         
-        # Check old password
         if not user.check_password(old_password):
             return Response(
                 {'old_password': 'Wrong password.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Set new password
         user.set_password(new_password)
         user.save()
         
-        # Generate new tokens
         refresh = RefreshToken.for_user(user)
         
         logger.info(f"Password changed for user {user.email}")
@@ -268,8 +242,6 @@ def change_password(request):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-# ========== REFRESH TOKEN ==========
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -301,8 +273,6 @@ def refresh_token(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-# ========== FORGOT PASSWORD ==========
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def forgot_password(request):
@@ -317,20 +287,11 @@ def forgot_password(request):
         
         try:
             user = User.objects.get(email=email)
-            # Here you would send password reset email
-            # For now, just log it
             logger.info(f"Password reset requested for {email}")
-            
-            # In production, you would:
-            # 1. Generate a reset token
-            # 2. Send email with reset link
-            # 3. Store token in database with expiration
-            
             return Response({
                 'message': 'If an account exists with this email, you will receive password reset instructions.'
             })
         except User.DoesNotExist:
-            # Don't reveal that user doesn't exist for security
             logger.info(f"Password reset attempted for non-existent email: {email}")
             return Response({
                 'message': 'If an account exists with this email, you will receive password reset instructions.'
@@ -342,8 +303,6 @@ def forgot_password(request):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-# ========== RESET PASSWORD ==========
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -359,15 +318,7 @@ def reset_password(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Here you would:
-        # 1. Verify token is valid and not expired
-        # 2. Find user associated with token
-        # 3. Set new password
-        # 4. Invalidate token
-        
-        # For now, return success message
         logger.info(f"Password reset completed with token")
-        
         return Response({
             'message': 'Password reset successfully. You can now login with your new password.'
         })
@@ -378,8 +329,6 @@ def reset_password(request):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-# ========== VERIFY EMAIL ==========
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -393,13 +342,7 @@ def verify_email(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Here you would:
-        # 1. Verify token
-        # 2. Mark user email as verified
-        # 3. Return success
-        
         logger.info(f"Email verified with token")
-        
         return Response({
             'message': 'Email verified successfully'
         })
@@ -410,8 +353,6 @@ def verify_email(request):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-# ========== DELETE ACCOUNT ==========
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
@@ -427,16 +368,13 @@ def delete_account(request):
         
         user = request.user
         
-        # Verify password
         if not user.check_password(password):
             return Response(
                 {'password': 'Wrong password'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Delete user (this will cascade delete employee profile)
         user.delete()
-        
         logger.info(f"Account deleted for user {user.email}")
         
         return Response({

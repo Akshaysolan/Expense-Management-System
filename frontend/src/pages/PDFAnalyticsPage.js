@@ -1,4 +1,3 @@
-// frontend/src/pages/PDFAnalyticsPage.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -66,7 +65,7 @@ function PDFAnalyticsPage() {
   const handleRefresh = () => { if (id) fetchPDFAnalytics(); else fetchAllPDFHistory(); };
 
   const formatCurrency = (value) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 
   if (loading) return (
     <div className="pdf-analytics-loading">
@@ -141,7 +140,6 @@ function PDFAnalyticsPage() {
   /* Analytics Detail View */
   return (
     <div className="pdf-analytics-page">
-      {/* Header */}
       <div className="analytics-header">
         <button className="back-btn" onClick={() => navigate('/pdf-analytics')}>
           <ArrowLeft size={16} /> Back to History
@@ -153,7 +151,6 @@ function PDFAnalyticsPage() {
         <button className="refresh-btn" onClick={handleRefresh}><RefreshCw size={16} /> Refresh</button>
       </div>
 
-      {/* Tabs */}
       <div className="analytics-tabs">
         {['overview', 'expenses', 'trends'].map((tab) => (
           <button key={tab} className={`tab-btn ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
@@ -162,7 +159,6 @@ function PDFAnalyticsPage() {
         ))}
       </div>
 
-      {/* Stats Cards */}
       <div className="stats-grid">
         {[
           { icon: <FileText size={22} />, bg: '#dbeafe', color: '#1e40af', label: 'Total Expenses', value: pdfData?.expenses?.length || 0 },
@@ -177,7 +173,6 @@ function PDFAnalyticsPage() {
         ))}
       </div>
 
-      {/* Chart */}
       <div className="chart-container">
         <div className="chart-header">
           <div className="chart-title"><BarChart3 size={20} /><span>Expense Analysis</span></div>
@@ -223,7 +218,6 @@ function PDFAnalyticsPage() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="expenses-table">
         <div className="table-header">
           <div className="table-title"><FileText size={20} /><span>Extracted Expenses</span></div>

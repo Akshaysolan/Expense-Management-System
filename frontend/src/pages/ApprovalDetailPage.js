@@ -1,5 +1,4 @@
-// frontend/src/pages/ApprovalDetailPage.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -14,32 +13,89 @@ function ApprovalDetailPage() {
   const navigate = useNavigate();
   const { authAxios, user } = useAuth();
   
-  const [approval, setApproval] = useState({
-    id: parseInt(id),
-    type: 'Expense',
-    subject: 'Business Lunch with Client',
-    employee: 'Sarah Jade',
-    employeeId: 3,
-    amount: 75.50,
-    date: '2026-04-08',
-    submittedDate: '2026-04-07',
-    description: 'Lunch meeting with potential client to discuss new project opportunity.',
-    status: 'Pending',
-    comments: [],
-    attachments: []
-  });
-
+  const [approval, setApproval] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [comment, setComment] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [type, setType] = useState('expense'); // 'expense' or 'trip'
+
+  useEffect(() => {
+    // Determine if it's expense or trip based on URL pattern or ID format
+    const pathParts = window.location.pathname.split('/');
+    const itemType = pathParts[1]; // 'expenses' or 'trips'
+    setType(itemType === 'expenses' ? 'expense' : 'trip');
+    fetchApprovalDetail();
+  }, [id]);
+
+  const fetchApprovalDetail = async () => {
+    try {
+      setLoading(true);
+      const endpoint = type === 'expense' ? `/expenses/${id}/` : `/trips/${id}/`;
+      const response = await authAxios.get(endpoint);
+      
+      // Format data based on type
+      if (type === 'expense') {
+        setApproval({
+          id: response.data.id,
+          type: 'Expense',
+          subject: response.data.subject,
+          employee: response.data.employee_name,
+          amount: parseFloat(response.data.amount),
+          date: response.data.date,
+          submittedDate: response.data.created_at,
+          description: response.data.description,
+          status: response.data.status,
+          comments: response.data.comments || [],
+          attachments: response.data.receipt_file ? [response.data.receipt_file] : []
+        });
+      } else {
+        setApproval({
+          id: response.data.id,
+          type: 'Trip',
+          subject: response.data.destination,
+          employee: response.data.employee_name,
+          amount: parseFloat(response.data.estimated_expenses),
+          date: response.data.start_date,
+          submittedDate: response.data.created_at,
+          description: response.data.purpose,
+          status: response.data.status,
+          comments: response.data.comments || [],
+          attachments: []
+        });
+      }
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching approval:', err);
+      setError('Failed to load details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchComments = async () => {
+    try {
+      const endpoint = type === 'expense' 
+        ? `/expenses/${id}/comments/` 
+        : `/trips/${id}/comments/`;
+      const response = await authAxios.get(endpoint);
+      setApproval(prev => ({ ...prev, comments: response.data }));
+    } catch (err) {
+      console.error('Error fetching comments:', err);
+    }
+  };
 
   const handleApprove = async () => {
     setProcessing(true);
     try {
-      // API call would go here
-      setApproval(prev => ({ ...prev, status: 'Approved' }));
-      setTimeout(() => navigate('/approvals'), 1500);
-    } catch (error) {
-      console.error('Error approving:', error);
+      const endpoint = type === 'expense' 
+        ? `/expenses/${id}/approve/` 
+        : `/trips/${id}/approve/`;
+      await authAxios.post(endpoint);
+      navigate('/approvals');
+    } catch (err) {
+      console.error('Error approving:', err);
+      alert('Failed to approve.');
     } finally {
       setProcessing(false);
     }
@@ -53,31 +109,36 @@ function ApprovalDetailPage() {
     
     setProcessing(true);
     try {
-      // API call would go here
-      setApproval(prev => ({ ...prev, status: 'Rejected' }));
-      setTimeout(() => navigate('/approvals'), 1500);
-    } catch (error) {
-      console.error('Error rejecting:', error);
+      const endpoint = type === 'expense' 
+        ? `/expenses/${id}/reject/` 
+        : `/trips/${id}/reject/`;
+      await authAxios.post(endpoint, { reason: comment });
+      navigate('/approvals');
+    } catch (err) {
+      console.error('Error rejecting:', err);
+      alert('Failed to reject.');
     } finally {
       setProcessing(false);
     }
   };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!comment.trim()) return;
     
-    const newComment = {
-      id: Date.now(),
-      user: user?.full_name || 'Current User',
-      text: comment,
-      date: new Date().toISOString()
-    };
-    
-    setApproval(prev => ({
-      ...prev,
-      comments: [...prev.comments, newComment]
-    }));
-    setComment('');
+    try {
+      const endpoint = type === 'expense' 
+        ? `/expenses/${id}/comments/` 
+        : `/trips/${id}/comments/`;
+      const response = await authAxios.post(endpoint, { text: comment });
+      setApproval(prev => ({
+        ...prev,
+        comments: [response.data, ...(prev?.comments || [])]
+      }));
+      setComment('');
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      alert('Failed to add comment.');
+    }
   };
 
   const formatDate = (dateString) => {
@@ -96,9 +157,30 @@ function ApprovalDetailPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner" />
+        <p>Loading details...</p>
+      </div>
+    );
+  }
+
+  if (error || !approval) {
+    return (
+      <div className="error-container">
+        <AlertCircle size={48} />
+        <h2>Error</h2>
+        <p>{error || 'Item not found'}</p>
+        <button onClick={() => navigate('/approvals')} className="back-btn">
+          <ArrowLeft size={16} /> Back to Approvals
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="approval-detail-page">
-      {/* Header */}
       <div className="detail-header">
         <button className="back-button" onClick={() => navigate('/approvals')}>
           <ArrowLeft size={20} />
@@ -112,21 +194,17 @@ function ApprovalDetailPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          {/* Status Banner */}
           <div className={`status-banner ${approval.status.toLowerCase()}`}>
             {getStatusIcon(approval.status)}
             <span>{approval.status}</span>
           </div>
 
-          {/* Title */}
           <div className="title-section">
             <h1>{approval.subject}</h1>
             <span className="approval-type-badge">{approval.type}</span>
           </div>
 
-          {/* Two Column Layout */}
           <div className="two-column-layout">
-            {/* Left Column - Details */}
             <div className="left-column">
               <div className="details-section">
                 <h3>Details</h3>
@@ -169,14 +247,14 @@ function ApprovalDetailPage() {
                 <p>{approval.description}</p>
               </div>
 
-              {approval.attachments.length > 0 && (
+              {approval.attachments?.length > 0 && (
                 <div className="attachments-section">
                   <h3>Attachments</h3>
                   <div className="attachment-list">
                     {approval.attachments.map((att, idx) => (
                       <div key={idx} className="attachment-item">
                         <FileText size={16} />
-                        <span>{att}</span>
+                        <span>{att.split('/').pop()}</span>
                       </div>
                     ))}
                   </div>
@@ -184,9 +262,8 @@ function ApprovalDetailPage() {
               )}
             </div>
 
-            {/* Right Column - Actions & Comments */}
             <div className="right-column">
-              {approval.status === 'Pending' && (
+              {approval.status === 'pending' && (
                 <div className="action-section">
                   <h3>Actions</h3>
                   
@@ -232,17 +309,17 @@ function ApprovalDetailPage() {
               <div className="comments-section">
                 <h3>Comments & History</h3>
                 
-                {approval.comments.length === 0 ? (
+                {approval.comments?.length === 0 ? (
                   <p className="no-comments">No comments yet</p>
                 ) : (
                   <div className="comments-list">
-                    {approval.comments.map(com => (
+                    {approval.comments?.map(com => (
                       <div key={com.id} className="comment-item">
                         <div className="comment-header">
-                          <span className="comment-user">{com.user}</span>
-                          <span className="comment-date">{formatDate(com.date)}</span>
+                          <span className="comment-user">{com.author || com.user}</span>
+                          <span className="comment-date">{formatDate(com.created_at)}</span>
                         </div>
-                        <p className="comment-text">{com.text}</p>
+                        <p className="comment-text">{com.text || com.message}</p>
                       </div>
                     ))}
                   </div>

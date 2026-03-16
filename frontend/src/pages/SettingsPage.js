@@ -1,36 +1,108 @@
-// frontend/src/pages/SettingsPage.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { FaUser, FaBell, FaShieldAlt, FaPalette, FaGlobe, FaSave } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 
 function SettingsPage() {
+  const { authAxios, user, updateProfile } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+  
   const [settings, setSettings] = useState({
     profile: {
-      name: 'Janice Chandler',
-      email: 'janice.chandler@company.com',
-      role: 'Administrator',
-      department: 'Finance'
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      department: '',
+      position: ''
     },
     notifications: {
-      emailAlerts: true,
-      pushNotifications: true,
-      approvalRequests: true,
-      expenseReports: true,
-      tripUpdates: false
+      email_alerts: true,
+      push_notifications: true,
+      approval_requests: true,
+      expense_reports: true,
+      trip_updates: false
     },
     preferences: {
-      language: 'English',
+      language: 'en',
       currency: 'EUR',
-      dateFormat: 'DD/MM/YYYY',
+      date_format: 'DD/MM/YYYY',
       theme: 'light'
     },
     security: {
-      twoFactorAuth: false,
-      sessionTimeout: '30',
-      loginAlerts: true
+      two_factor_auth: false,
+      session_timeout: 30,
+      login_alerts: true
     }
   });
 
   const [activeTab, setActiveTab] = useState('profile');
+
+  useEffect(() => {
+    fetchUserSettings();
+  }, []);
+
+  const fetchUserSettings = async () => {
+    try {
+      setLoading(true);
+      // Fetch user profile
+      if (user) {
+        setSettings(prev => ({
+          ...prev,
+          profile: {
+            first_name: user.first_name || '',
+            last_name: user.last_name || '',
+            email: user.email || '',
+            phone: user.phone || '',
+            department: user.department || '',
+            position: user.position || ''
+          }
+        }));
+      }
+      
+      // Fetch notification preferences
+      try {
+        const notifResponse = await authAxios.get('/settings/notifications/');
+        setSettings(prev => ({
+          ...prev,
+          notifications: notifResponse.data
+        }));
+      } catch (err) {
+        console.log('Using default notification settings');
+      }
+      
+      // Fetch preferences
+      try {
+        const prefResponse = await authAxios.get('/settings/preferences/');
+        setSettings(prev => ({
+          ...prev,
+          preferences: prefResponse.data
+        }));
+      } catch (err) {
+        console.log('Using default preferences');
+      }
+      
+      // Fetch security settings
+      try {
+        const securityResponse = await authAxios.get('/settings/security/');
+        setSettings(prev => ({
+          ...prev,
+          security: securityResponse.data
+        }));
+      } catch (err) {
+        console.log('Using default security settings');
+      }
+      
+      setError('');
+    } catch (err) {
+      console.error('Error fetching settings:', err);
+      setError('Failed to load settings');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
@@ -76,19 +148,84 @@ function SettingsPage() {
     });
   };
 
-  const handleSave = () => {
-    alert('Settings saved successfully!');
-    console.log('Settings saved:', settings);
+  const handleSave = async () => {
+    setLoading(true);
+    setSuccess('');
+    setError('');
+    
+    try {
+      // Save profile settings
+      if (activeTab === 'profile') {
+        await updateProfile({
+          first_name: settings.profile.first_name,
+          last_name: settings.profile.last_name,
+          email: settings.profile.email,
+          phone: settings.profile.phone,
+          department: settings.profile.department,
+          position: settings.profile.position
+        });
+      }
+      
+      // Save notification settings
+      if (activeTab === 'notifications') {
+        await authAxios.post('/settings/notifications/', settings.notifications);
+      }
+      
+      // Save preferences
+      if (activeTab === 'preferences') {
+        await authAxios.post('/settings/preferences/', settings.preferences);
+      }
+      
+      // Save security settings
+      if (activeTab === 'security') {
+        await authAxios.post('/settings/security/', settings.security);
+      }
+      
+      setSuccess('Settings saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      setError('Failed to save settings. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading && !settings.profile.first_name) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner" />
+        <p>Loading settings...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
       <div className="page-header">
         <h1>Settings</h1>
-        <button className="btn-primary" onClick={handleSave}>
-          <FaSave /> Save Changes
-        </button>
+        <motion.button 
+          className="btn-primary" 
+          onClick={handleSave}
+          disabled={loading}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <FaSave /> {loading ? 'Saving...' : 'Save Changes'}
+        </motion.button>
       </div>
+
+      {success && (
+        <div className="success-message">
+          {success}
+        </div>
+      )}
+
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
 
       <div className="settings-container">
         <div className="settings-sidebar">
@@ -126,14 +263,28 @@ function SettingsPage() {
 
         <div className="settings-content">
           {activeTab === 'profile' && (
-            <div className="settings-section">
+            <motion.div 
+              className="settings-section"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <h2>Profile Settings</h2>
               <div className="form-group">
-                <label>Full Name</label>
+                <label>First Name</label>
                 <input
                   type="text"
-                  name="name"
-                  value={settings.profile.name}
+                  name="first_name"
+                  value={settings.profile.first_name}
+                  onChange={handleProfileChange}
+                />
+              </div>
+              <div className="form-group">
+                <label>Last Name</label>
+                <input
+                  type="text"
+                  name="last_name"
+                  value={settings.profile.last_name}
                   onChange={handleProfileChange}
                 />
               </div>
@@ -147,36 +298,49 @@ function SettingsPage() {
                 />
               </div>
               <div className="form-group">
-                <label>Role</label>
+                <label>Phone Number</label>
                 <input
-                  type="text"
-                  name="role"
-                  value={settings.profile.role}
+                  type="tel"
+                  name="phone"
+                  value={settings.profile.phone}
                   onChange={handleProfileChange}
                 />
               </div>
               <div className="form-group">
                 <label>Department</label>
-                <select name="department" value={settings.profile.department} onChange={handleProfileChange}>
-                  <option value="Finance">Finance</option>
-                  <option value="Sales">Sales</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="IT">IT</option>
-                  <option value="HR">HR</option>
-                </select>
+                <input
+                  type="text"
+                  name="department"
+                  value={settings.profile.department}
+                  onChange={handleProfileChange}
+                />
               </div>
-            </div>
+              <div className="form-group">
+                <label>Position</label>
+                <input
+                  type="text"
+                  name="position"
+                  value={settings.profile.position}
+                  onChange={handleProfileChange}
+                />
+              </div>
+            </motion.div>
           )}
 
           {activeTab === 'notifications' && (
-            <div className="settings-section">
+            <motion.div 
+              className="settings-section"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <h2>Notification Preferences</h2>
               <div className="checkbox-group">
                 <label>
                   <input
                     type="checkbox"
-                    name="emailAlerts"
-                    checked={settings.notifications.emailAlerts}
+                    name="email_alerts"
+                    checked={settings.notifications.email_alerts}
                     onChange={handleNotificationChange}
                   />
                   Email Alerts
@@ -186,8 +350,8 @@ function SettingsPage() {
                 <label>
                   <input
                     type="checkbox"
-                    name="pushNotifications"
-                    checked={settings.notifications.pushNotifications}
+                    name="push_notifications"
+                    checked={settings.notifications.push_notifications}
                     onChange={handleNotificationChange}
                   />
                   Push Notifications
@@ -197,8 +361,8 @@ function SettingsPage() {
                 <label>
                   <input
                     type="checkbox"
-                    name="approvalRequests"
-                    checked={settings.notifications.approvalRequests}
+                    name="approval_requests"
+                    checked={settings.notifications.approval_requests}
                     onChange={handleNotificationChange}
                   />
                   Approval Requests
@@ -208,8 +372,8 @@ function SettingsPage() {
                 <label>
                   <input
                     type="checkbox"
-                    name="expenseReports"
-                    checked={settings.notifications.expenseReports}
+                    name="expense_reports"
+                    checked={settings.notifications.expense_reports}
                     onChange={handleNotificationChange}
                   />
                   Expense Reports
@@ -219,26 +383,31 @@ function SettingsPage() {
                 <label>
                   <input
                     type="checkbox"
-                    name="tripUpdates"
-                    checked={settings.notifications.tripUpdates}
+                    name="trip_updates"
+                    checked={settings.notifications.trip_updates}
                     onChange={handleNotificationChange}
                   />
                   Trip Updates
                 </label>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {activeTab === 'preferences' && (
-            <div className="settings-section">
+            <motion.div 
+              className="settings-section"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <h2>Regional Settings</h2>
               <div className="form-group">
                 <label>Language</label>
                 <select name="language" value={settings.preferences.language} onChange={handlePreferenceChange}>
-                  <option value="English">English</option>
-                  <option value="Spanish">Spanish</option>
-                  <option value="French">French</option>
-                  <option value="German">German</option>
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
                 </select>
               </div>
               <div className="form-group">
@@ -251,24 +420,29 @@ function SettingsPage() {
               </div>
               <div className="form-group">
                 <label>Date Format</label>
-                <select name="dateFormat" value={settings.preferences.dateFormat} onChange={handlePreferenceChange}>
+                <select name="date_format" value={settings.preferences.date_format} onChange={handlePreferenceChange}>
                   <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                   <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                   <option value="YYYY-MM-DD">YYYY-MM-DD</option>
                 </select>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {activeTab === 'security' && (
-            <div className="settings-section">
+            <motion.div 
+              className="settings-section"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <h2>Security Settings</h2>
               <div className="checkbox-group">
                 <label>
                   <input
                     type="checkbox"
-                    name="twoFactorAuth"
-                    checked={settings.security.twoFactorAuth}
+                    name="two_factor_auth"
+                    checked={settings.security.two_factor_auth}
                     onChange={handleSecurityChange}
                   />
                   Enable Two-Factor Authentication
@@ -278,8 +452,8 @@ function SettingsPage() {
                 <label>
                   <input
                     type="checkbox"
-                    name="loginAlerts"
-                    checked={settings.security.loginAlerts}
+                    name="login_alerts"
+                    checked={settings.security.login_alerts}
                     onChange={handleSecurityChange}
                   />
                   Login Alerts
@@ -289,18 +463,23 @@ function SettingsPage() {
                 <label>Session Timeout (minutes)</label>
                 <input
                   type="number"
-                  name="sessionTimeout"
-                  value={settings.security.sessionTimeout}
+                  name="session_timeout"
+                  value={settings.security.session_timeout}
                   onChange={handleSecurityChange}
                   min="5"
                   max="120"
                 />
               </div>
-            </div>
+            </motion.div>
           )}
 
           {activeTab === 'appearance' && (
-            <div className="settings-section">
+            <motion.div 
+              className="settings-section"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <h2>Appearance</h2>
               <div className="theme-options">
                 <div className="theme-option">
@@ -328,7 +507,7 @@ function SettingsPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>

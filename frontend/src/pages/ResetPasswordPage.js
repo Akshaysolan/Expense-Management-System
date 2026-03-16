@@ -1,4 +1,3 @@
-// frontend/src/pages/ResetPasswordPage.js
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -159,12 +158,12 @@ function ResetPasswordPage() {
               </div>
               
               {form.password && (
-                <div className="password-strength">
+                <div className="auth-password-strength">
                   <div 
-                    className="strength-bar"
+                    className="auth-strength-bar"
                     style={{ width: `${passwordStrength}%`, backgroundColor: getStrengthColor() }}
                   />
-                  <span className="strength-text">
+                  <span className="auth-strength-text">
                     {passwordStrength < 50 ? 'Weak' : passwordStrength < 75 ? 'Medium' : 'Strong'}
                   </span>
                 </div>
@@ -191,7 +190,7 @@ function ResetPasswordPage() {
               </div>
             </div>
 
-            <div className="password-requirements">
+            <div className="auth-requirements">
               <p>Password must contain:</p>
               <ul>
                 <li className={form.password.length >= 8 ? 'valid' : ''}>

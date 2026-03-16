@@ -1,12 +1,10 @@
-// frontend/src/pages/SupportPage.js
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   HelpCircle, BookOpen, Mail, Phone, MessageSquare, Video,
   ChevronDown, Send, CheckCircle, AlertCircle, Loader,
   Search, ExternalLink, Clock, ArrowRight, X, Zap
 } from 'lucide-react';
-
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
@@ -22,23 +20,6 @@ const api = {
   submitFAQFeedback:  (id, h) => fetch(`${API_BASE_URL}/faq/feedback/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ faq: id, is_helpful: h }) }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
   bookVideoCall:      (d) => fetch(`${API_BASE_URL}/video/book/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
 };
-
-function AnimatedStat({ value, suffix = '' }) {
-  const [display, setDisplay] = useState(0);
-  useEffect(() => {
-    let start = 0;
-    const end = parseInt(value);
-    if (start === end) return;
-    const step = Math.ceil(end / 30);
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= end) { setDisplay(end); clearInterval(timer); }
-      else setDisplay(start);
-    }, 30);
-    return () => clearInterval(timer);
-  }, [value]);
-  return <>{display}{suffix}</>;
-}
 
 function Toast({ message, type, onClose }) {
   useEffect(() => {
@@ -87,6 +68,7 @@ function SupportPage() {
   const [activeSection, setActiveSection] = useState('cards');
 
   useEffect(() => { loadInitialData(); }, []);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages]);
 
   const loadInitialData = async () => {
     try {
@@ -99,8 +81,6 @@ function SupportPage() {
       setLoading({ faqs: false, documents: false, stats: false });
     }
   };
-
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages]);
 
   const faqTags = ['All', ...new Set(faqs.map(f => f.tag))];
   const filteredFaqs = faqs.filter(f => {
@@ -173,23 +153,9 @@ function SupportPage() {
     } catch { setToast({ type: 'error', message: 'Failed to send message.' }); setChatTyping(false); }
   };
 
-  const handleChatKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } };
-
   const closeChat = async () => {
     if (chatSession) { try { await api.closeChatSession(chatSession.session_id); } catch {} }
     setChatOpen(false); setChatSession(null); setChatMessages([]);
-  };
-
-  const handleFaqFeedback = async (faqId, isHelpful) => {
-    try { await api.submitFAQFeedback(faqId, isHelpful); setToast({ type: 'success', message: 'Thanks for your feedback!' }); }
-    catch { setToast({ type: 'error', message: 'Failed to submit feedback.' }); }
-  };
-
-  const handleVideoBooking = async () => {
-    try {
-      const booking = await api.bookVideoCall({ name: 'John Doe', email: 'john@example.com', preferred_date: '2026-04-20', preferred_time: '14:00', topic: 'Technical support' });
-      setToast({ type: 'success', message: `Video call booked! Confirmation: ${booking.booking_id}` });
-    } catch { setToast({ type: 'error', message: 'Failed to book video call.' }); }
   };
 
   const scrollTo = (id) => {
@@ -215,7 +181,6 @@ function SupportPage() {
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </AnimatePresence>
 
-      {/* Header */}
       <motion.div className="sp-header" initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
         <div className="sp-header__text">
           <h1 className="sp-header__title">Support <em>Center</em></h1>
@@ -228,7 +193,6 @@ function SupportPage() {
         </nav>
       </motion.div>
 
-      {/* Cards */}
       <motion.div id="cards" className="sp-cards" variants={stagger} initial="hidden" animate="show">
         {[
           { icon: <HelpCircle size={26} />, color: '#f0b429', title: 'FAQ', desc: 'Instant answers to common questions', action: 'Browse FAQs', onClick: () => scrollTo('faq') },
@@ -236,7 +200,7 @@ function SupportPage() {
           { icon: <MessageSquare size={26} />, color: '#34d399', title: 'Live Chat', desc: 'Chat with a human agent, 24/7', action: 'Start Chat', onClick: startChat, loading: chatLoading },
           { icon: <Mail size={26} />, color: '#ec4899', title: 'Email Support', desc: 'Get a response within 24 hours', action: 'Send Message', onClick: () => scrollTo('contact') },
           { icon: <Phone size={26} />, color: '#a78bfa', title: 'Phone Support', desc: '+1 (555) 123-4567  ·  Mon–Fri 9–6', action: 'Call Now', onClick: () => window.location.href = 'tel:+15551234567' },
-          { icon: <Video size={26} />, color: '#fb923c', title: 'Video Call', desc: 'Book a screen-share session', action: 'Book Now', onClick: handleVideoBooking },
+          { icon: <Video size={26} />, color: '#fb923c', title: 'Video Call', desc: 'Book a screen-share session', action: 'Book Now', onClick: () => scrollTo('contact') },
         ].map((card, i) => (
           <motion.div key={i} className="sp-card" variants={fadeUp} whileHover={{ y: -5 }} style={{ '--card-color': card.color }}>
             <div className="sp-card__icon" style={{ background: `${card.color}18` }}>
@@ -252,20 +216,18 @@ function SupportPage() {
         ))}
       </motion.div>
 
-      {/* Stats */}
       <motion.div id="stats" className="sp-stats" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
         {loading.stats
           ? <div className="sp-loading">Loading stats...</div>
           : stats.map((s, i) => (
             <div key={i} className="sp-stat">
-              <span className="sp-stat__value"><AnimatedStat value={s.value} suffix={s.suffix} /></span>
+              <span className="sp-stat__value">{s.value}</span>
               <span className="sp-stat__label">{s.label}</span>
             </div>
           ))
         }
       </motion.div>
 
-      {/* FAQ */}
       <section id="faq" className="sp-section">
         <div className="sp-section__head">
           <h2 className="sp-section__title">Frequently Asked <em>Questions</em></h2>
@@ -300,8 +262,8 @@ function SupportPage() {
                             <p>{faq.answer}</p>
                             <div className="sp-faq-a__actions">
                               <span className="sp-faq-a__helpful">Was this helpful?</span>
-                              <button className="sp-faq-a__vote" onClick={() => handleFaqFeedback(faq.id, true)}>👍 Yes</button>
-                              <button className="sp-faq-a__vote" onClick={() => { handleFaqFeedback(faq.id, false); scrollTo('contact'); }}>👎 No — contact us</button>
+                              <button className="sp-faq-a__vote" onClick={() => setToast({ type: 'success', message: 'Thanks for your feedback!' })}>👍 Yes</button>
+                              <button className="sp-faq-a__vote" onClick={() => scrollTo('contact')}>👎 No — contact us</button>
                             </div>
                           </div>
                         </motion.div>
@@ -315,7 +277,6 @@ function SupportPage() {
         </div>
       </section>
 
-      {/* Docs */}
       <section id="docs" className="sp-section">
         <div className="sp-section__head">
           <h2 className="sp-section__title">Documentation <em>&amp; Guides</em></h2>
@@ -337,7 +298,6 @@ function SupportPage() {
         </motion.div>
       </section>
 
-      {/* Contact */}
       <section id="contact" className="sp-section">
         <div className="sp-section__head">
           <h2 className="sp-section__title">Contact <em>Support</em></h2>
@@ -347,7 +307,7 @@ function SupportPage() {
           {[
             { icon: <MessageSquare size={22} />, color: '#34d399', label: 'Live Chat', sub: '< 2 min wait', action: 'Start Chat', onClick: startChat, loading: chatLoading },
             { icon: <Phone size={22} />, color: '#a78bfa', label: 'Phone', sub: 'Mon–Fri 9–6 EST', action: 'Call Now', onClick: () => window.location.href = 'tel:+15551234567' },
-            { icon: <Video size={22} />, color: '#fb923c', label: 'Video Call', sub: 'By appointment', action: 'Book', onClick: handleVideoBooking },
+            { icon: <Video size={22} />, color: '#fb923c', label: 'Video Call', sub: 'By appointment', action: 'Book', onClick: () => setToast({ type: 'info', message: 'Video booking form coming soon!' }) },
           ].map((opt, i) => (
             <motion.div key={i} className="sp-contact-opt" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} style={{ '--opt-color': opt.color }}>
               <div className="sp-contact-opt__icon" style={{ background: `${opt.color}18`, color: opt.color }}>{opt.icon}</div>
@@ -417,7 +377,6 @@ function SupportPage() {
         </motion.div>
       </section>
 
-      {/* Chat Drawer */}
       <AnimatePresence>
         {chatOpen && (
           <>
@@ -447,7 +406,7 @@ function SupportPage() {
                 <div ref={chatEndRef} />
               </div>
               <div className="sp-chat__footer">
-                <input type="text" className="sp-chat__input" placeholder="Type a message…" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={handleChatKey} />
+                <input type="text" className="sp-chat__input" placeholder="Type a message…" value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }} />
                 <button className="sp-chat__send" onClick={sendChatMessage} disabled={!chatInput.trim()}><Send size={16} /></button>
               </div>
             </motion.div>
@@ -455,7 +414,6 @@ function SupportPage() {
         )}
       </AnimatePresence>
 
-      {/* FAB */}
       {!chatOpen && (
         <motion.button className="sp-fab" onClick={startChat} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.96 }} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.8, type: 'spring' }} title="Open live chat" disabled={chatLoading}>
           {chatLoading ? <Loader size={22} className="sp-spinner" /> : <MessageSquare size={22} />}

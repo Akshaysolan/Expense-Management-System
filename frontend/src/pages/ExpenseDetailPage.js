@@ -1,7 +1,6 @@
-// frontend/src/pages/ExpenseDetailPage.js
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';  // Add AnimatePresence here
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Edit, Trash2, Download, CheckCircle, 
   XCircle, Clock, User, Calendar, Tag, FileText,
@@ -186,7 +185,6 @@ function ExpenseDetailPage() {
 
   return (
     <div className="expense-detail-page">
-      {/* Header */}
       <div className="detail-header">
         <button className="back-button" onClick={() => navigate('/expenses')}>
           <ArrowLeft size={20} />
@@ -246,29 +244,24 @@ function ExpenseDetailPage() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="detail-content">
         <div className="detail-grid">
-          {/* Left Column - Main Info */}
           <motion.div 
             className="detail-card main-card"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Status Banner */}
             <div className={`status-banner ${getStatusClass(expense.status)}`}>
               {getStatusIcon(expense.status)}
               <span>{expense.status || 'Pending'}</span>
             </div>
 
-            {/* Title Section */}
             <div className="title-section">
               <h1>{expense.subject}</h1>
               <p className="description">{expense.description || 'No description provided'}</p>
             </div>
 
-            {/* Details Grid */}
             <div className="details-grid">
               <div className="detail-item">
                 <DollarSign className="detail-icon" />
@@ -321,7 +314,6 @@ function ExpenseDetailPage() {
               </div>
             </div>
 
-            {/* Approver Info */}
             {expense.approved_by && (
               <div className="approver-info">
                 <CheckCircle size={16} />
@@ -339,7 +331,6 @@ function ExpenseDetailPage() {
               </div>
             )}
 
-            {/* Metadata */}
             <div className="metadata-section">
               <p className="metadata">
                 Created: {formatDate(expense.created_at)}
@@ -350,9 +341,7 @@ function ExpenseDetailPage() {
             </div>
           </motion.div>
 
-          {/* Right Column - Receipt and Comments */}
           <div className="detail-sidebar">
-            {/* Receipt Section */}
             {expense.receipt_file && (
               <motion.div 
                 className="detail-card receipt-card"
@@ -391,7 +380,6 @@ function ExpenseDetailPage() {
               </motion.div>
             )}
 
-            {/* Comments Section */}
             <motion.div 
               className="detail-card comments-card"
               initial={{ opacity: 0, y: 20 }}
@@ -445,7 +433,6 @@ function ExpenseDetailPage() {
               </AnimatePresence>
             </motion.div>
 
-            {/* Activity Log */}
             <motion.div 
               className="detail-card activity-card"
               initial={{ opacity: 0, y: 20 }}
@@ -476,7 +463,6 @@ function ExpenseDetailPage() {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteModal && (
           <motion.div 
@@ -509,7 +495,6 @@ function ExpenseDetailPage() {
         )}
       </AnimatePresence>
 
-      {/* Approve Modal */}
       <AnimatePresence>
         {showApproveModal && (
           <motion.div 
@@ -542,7 +527,6 @@ function ExpenseDetailPage() {
         )}
       </AnimatePresence>
 
-      {/* Reject Modal */}
       <AnimatePresence>
         {showRejectModal && (
           <motion.div 

@@ -1,0 +1,92 @@
+[
+  {
+    "model": "api.category",
+    "pk": 1,
+    "fields": {
+      "name": "Office Supplies",
+      "code": "OFFICE",
+      "description": "Stationery, printer supplies, office equipment",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.category",
+    "pk": 2,
+    "fields": {
+      "name": "Travel",
+      "code": "TRAVEL",
+      "description": "Flights, trains, taxis, car rentals",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.category",
+    "pk": 3,
+    "fields": {
+      "name": "Meals",
+      "code": "MEALS",
+      "description": "Business meals, client entertainment",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.category",
+    "pk": 4,
+    "fields": {
+      "name": "Software",
+      "code": "SOFTWARE",
+      "description": "Software subscriptions, licenses",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.category",
+    "pk": 5,
+    "fields": {
+      "name": "Hardware",
+      "code": "HARDWARE",
+      "description": "Laptops, monitors, accessories",
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.supportstat",
+    "pk": 1,
+    "fields": {
+      "name": "total_tickets",
+      "value": "2,847",
+      "suffix": "",
+      "label": "Tickets solved"
+    }
+  },
+  {
+    "model": "api.supportstat",
+    "pk": 2,
+    "fields": {
+      "name": "avg_response",
+      "value": "2",
+      "suffix": "h",
+      "label": "Average response time"
+    }
+  },
+  {
+    "model": "api.supportstat",
+    "pk": 3,
+    "fields": {
+      "name": "satisfaction",
+      "value": "98",
+      "suffix": "%",
+      "label": "Customer satisfaction"
+    }
+  },
+  {
+    "model": "api.supportstat",
+    "pk": 4,
+    "fields": {
+      "name": "active_users",
+      "value": "12k",
+      "suffix": "+",
+      "label": "Active users"
+    }
+  }
+]

@@ -1,4 +1,3 @@
-// frontend/src/pages/NotificationsPage.js
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -180,7 +179,6 @@ function NotificationsPage() {
 
   return (
     <div className="notif-page">
-      {/* Header */}
       <div className="notif-page__header">
         <div className="notif-page__title-group">
           <div className="notif-page__icon"><Bell size={22} /></div>
@@ -198,7 +196,6 @@ function NotificationsPage() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="notif-stats">
         {STATS.map(s => (
           <div key={s.label} className="notif-stat">
@@ -213,7 +210,6 @@ function NotificationsPage() {
         ))}
       </div>
 
-      {/* Filters */}
       <div className="notif-filters">
         <div className="notif-filter-group">
           {READ_FILTERS.map(f => (
@@ -247,7 +243,6 @@ function NotificationsPage() {
         <span className="notif-visible-count">{visible.length} notification{visible.length !== 1 ? 's' : ''}</span>
       </div>
 
-      {/* Content */}
       {loading ? (
         <div className="notif-loading"><RefreshCw size={28} className="spin" /><span>Loading notifications…</span></div>
       ) : error ? (

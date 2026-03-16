@@ -1,29 +1,49 @@
-// frontend/src/pages/AuditLogsPage.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Filter, Download, Calendar, User, 
   FileText, CheckCircle, XCircle, Clock,
   Search, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 function AuditLogsPage() {
-  const [logs, setLogs] = useState([
-    { id: 1, user: 'John Smith', action: 'Approved expense', target: 'Business Lunch', date: '2026-04-08T10:30:00', status: 'success' },
-    { id: 2, user: 'Sarah Jade', action: 'Created trip', target: 'London Conference', date: '2026-04-08T09:15:00', status: 'info' },
-    { id: 3, user: 'Mark Brown', action: 'Rejected expense', target: 'Hotel Booking', date: '2026-04-07T16:45:00', status: 'error' },
-    { id: 4, user: 'Jennifer Lee', action: 'Updated profile', target: 'Contact information', date: '2026-04-07T14:20:00', status: 'info' },
-    { id: 5, user: 'David Wilson', action: 'Deleted expense', target: 'Office Supplies', date: '2026-04-07T11:10:00', status: 'warning' },
-    { id: 6, user: 'System', action: 'PDF uploaded', target: 'receipt_0326.pdf', date: '2026-04-07T09:30:00', status: 'info' },
-  ]);
-
+  const { authAxios } = useAuth();
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
 
+  useEffect(() => {
+    fetchLogs();
+  }, [currentPage, filter]);
+
+  const fetchLogs = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        page: currentPage,
+        page_size: itemsPerPage,
+        status: filter !== 'all' ? filter : undefined
+      };
+      const response = await authAxios.get('/audit-logs/', { params });
+      setLogs(response.data.results || response.data);
+      setTotalPages(Math.ceil((response.data.count || response.data.length) / itemsPerPage));
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching logs:', err);
+      setError('Failed to load audit logs.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusIcon = (status) => {
-    switch(status) {
+    switch(status?.toLowerCase()) {
       case 'success': return <CheckCircle size={16} className="status-icon success" />;
       case 'error': return <XCircle size={16} className="status-icon error" />;
       case 'warning': return <Clock size={16} className="status-icon warning" />;
@@ -32,8 +52,7 @@ function AuditLogsPage() {
   };
 
   const formatDateTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
+    return new Date(dateString).toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -43,14 +62,40 @@ function AuditLogsPage() {
   };
 
   const filteredLogs = logs.filter(log => {
-    if (filter !== 'all' && log.status !== filter) return false;
-    if (searchTerm && !log.user.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !log.action.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !log.target.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm && !log.user?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !log.action?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !log.target?.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
     return true;
   });
+
+  const handleExport = async () => {
+    try {
+      const response = await authAxios.get('/audit-logs/export/', {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `audit-logs-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Error exporting logs:', err);
+      alert('Failed to export logs.');
+    }
+  };
+
+  if (loading && logs.length === 0) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner" />
+        <p>Loading audit logs...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="audit-logs-page">
@@ -59,7 +104,6 @@ function AuditLogsPage() {
         <p className="subtitle">Track all system activities and changes</p>
       </div>
 
-      {/* Filters */}
       <div className="logs-filters">
         <div className="search-box">
           <Search size={18} className="search-icon" />
@@ -100,21 +144,23 @@ function AuditLogsPage() {
 
         <div className="date-filter">
           <Calendar size={16} />
-          <select>
-            <option>Last 24 hours</option>
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-            <option>Custom range</option>
+          <select onChange={(e) => {
+            const [days] = e.target.value.split(' ');
+            const params = { days: parseInt(days) || 7 };
+            fetchLogs(params);
+          }}>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
           </select>
         </div>
 
-        <button className="export-btn">
+        <button className="export-btn" onClick={handleExport}>
           <Download size={16} />
           Export
         </button>
       </div>
 
-      {/* Logs Table */}
       <div className="logs-table-container">
         <table className="logs-table">
           <thead>
@@ -127,30 +173,37 @@ function AuditLogsPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredLogs.map(log => (
-              <motion.tr 
-                key={log.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                whileHover={{ backgroundColor: '#f9fafb' }}
-              >
-                <td>{getStatusIcon(log.status)}</td>
-                <td>
-                  <div className="user-cell">
-                    <User size={14} />
-                    {log.user}
-                  </div>
+            {filteredLogs.length > 0 ? (
+              filteredLogs.map(log => (
+                <motion.tr 
+                  key={log.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  whileHover={{ backgroundColor: 'var(--bg-hover)' }}
+                >
+                  <td>{getStatusIcon(log.status)}</td>
+                  <td>
+                    <div className="user-cell">
+                      <User size={14} />
+                      {log.user}
+                    </div>
+                  </td>
+                  <td>{log.action}</td>
+                  <td>{log.target}</td>
+                  <td>{formatDateTime(log.timestamp || log.date)}</td>
+                </motion.tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" className="no-data">
+                  <p>No audit logs found</p>
                 </td>
-                <td>{log.action}</td>
-                <td>{log.target}</td>
-                <td>{formatDateTime(log.date)}</td>
-              </motion.tr>
-            ))}
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
       <div className="pagination">
         <button 
           className="pagination-btn"
@@ -159,11 +212,11 @@ function AuditLogsPage() {
         >
           <ChevronLeft size={16} />
         </button>
-        <span className="page-info">Page {currentPage} of 10</span>
+        <span className="page-info">Page {currentPage} of {totalPages}</span>
         <button 
           className="pagination-btn"
-          onClick={() => setCurrentPage(p => p + 1)}
-          disabled={currentPage === 10}
+          onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+          disabled={currentPage === totalPages}
         >
           <ChevronRight size={16} />
         </button>

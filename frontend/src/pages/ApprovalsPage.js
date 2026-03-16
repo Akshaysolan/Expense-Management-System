@@ -1,68 +1,89 @@
-// frontend/src/pages/ApprovalsPage.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { FaCheck, FaTimes, FaEye } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 
 function ApprovalsPage() {
-  const [approvals, setApprovals] = useState([
-    {
-      id: 1,
-      type: 'Expense',
-      subject: 'Business Lunch',
-      employee: 'Sarah Jade',
-      amount: 75.50,
-      date: '2026-04-08',
-      status: 'Pending'
-    },
-    {
-      id: 2,
-      type: 'Trip',
-      subject: 'London Conference',
-      employee: 'John Smith',
-      amount: 1250.00,
-      date: '2026-04-22',
-      status: 'Pending'
-    },
-    {
-      id: 3,
-      type: 'Expense',
-      subject: 'Hotel Booking',
-      employee: 'Jennifer Lee',
-      amount: 450.75,
-      date: '2026-04-09',
-      status: 'Pending'
-    },
-    {
-      id: 4,
-      type: 'Expense',
-      subject: 'Office Supplies',
-      employee: 'Mark Brown',
-      amount: 89.99,
-      date: '2026-04-07',
-      status: 'Approved'
-    },
-    {
-      id: 5,
-      type: 'Trip',
-      subject: 'Client Visit',
-      employee: 'David Wilson',
-      amount: 890.50,
-      date: '2026-04-15',
-      status: 'Rejected'
-    }
-  ]);
-
+  const navigate = useNavigate();
+  const { authAxios } = useAuth();
+  
+  const [approvals, setApprovals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
 
-  const handleApprove = (id) => {
-    setApprovals(approvals.map(item => 
-      item.id === id ? { ...item, status: 'Approved' } : item
-    ));
+  useEffect(() => {
+    fetchApprovals();
+  }, []);
+
+  const fetchApprovals = async () => {
+    try {
+      setLoading(true);
+      const response = await authAxios.get('/expenses/?status=pending');
+      // Also fetch pending trips
+      const tripsResponse = await authAxios.get('/trips/?status=pending');
+      
+      // Combine and format data
+      const expenseApprovals = response.data.map(exp => ({
+        id: exp.id,
+        type: 'Expense',
+        subject: exp.subject,
+        employee: exp.employee_name,
+        amount: parseFloat(exp.amount),
+        date: exp.date,
+        status: exp.status
+      }));
+      
+      const tripApprovals = tripsResponse.data.map(trip => ({
+        id: trip.id,
+        type: 'Trip',
+        subject: trip.destination,
+        employee: trip.employee_name,
+        amount: parseFloat(trip.estimated_expenses),
+        date: trip.start_date,
+        status: trip.status
+      }));
+      
+      setApprovals([...expenseApprovals, ...tripApprovals]);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching approvals:', err);
+      setError('Failed to load approvals.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReject = (id) => {
-    setApprovals(approvals.map(item => 
-      item.id === id ? { ...item, status: 'Rejected' } : item
-    ));
+  const handleApprove = async (id, type) => {
+    try {
+      if (type === 'Expense') {
+        await authAxios.post(`/expenses/${id}/approve/`);
+      } else {
+        await authAxios.post(`/trips/${id}/approve/`);
+      }
+      fetchApprovals(); // Refresh list
+    } catch (err) {
+      console.error('Error approving:', err);
+      alert('Failed to approve.');
+    }
+  };
+
+  const handleReject = async (id, type) => {
+    const reason = prompt('Please provide a reason for rejection:');
+    if (!reason) return;
+    
+    try {
+      if (type === 'Expense') {
+        await authAxios.post(`/expenses/${id}/reject/`, { reason });
+      } else {
+        await authAxios.post(`/trips/${id}/reject/`, { reason });
+      }
+      fetchApprovals(); // Refresh list
+    } catch (err) {
+      console.error('Error rejecting:', err);
+      alert('Failed to reject.');
+    }
   };
 
   const filteredApprovals = approvals.filter(item => {
@@ -70,7 +91,26 @@ function ApprovalsPage() {
     return item.status.toLowerCase() === filter.toLowerCase();
   });
 
-  const pendingCount = approvals.filter(item => item.status === 'Pending').length;
+  const pendingCount = approvals.filter(item => item.status === 'pending').length;
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner" />
+        <p>Loading approvals...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <h2>Error</h2>
+        <p>{error}</p>
+        <button onClick={fetchApprovals} className="retry-btn">Retry</button>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
@@ -86,65 +126,77 @@ function ApprovalsPage() {
           className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
           onClick={() => setFilter('all')}
         >
-          All
+          All ({approvals.length})
         </button>
         <button 
           className={`filter-tab ${filter === 'pending' ? 'active' : ''}`}
           onClick={() => setFilter('pending')}
         >
-          Pending
+          Pending ({approvals.filter(a => a.status === 'pending').length})
         </button>
         <button 
           className={`filter-tab ${filter === 'approved' ? 'active' : ''}`}
           onClick={() => setFilter('approved')}
         >
-          Approved
+          Approved ({approvals.filter(a => a.status === 'approved').length})
         </button>
         <button 
           className={`filter-tab ${filter === 'rejected' ? 'active' : ''}`}
           onClick={() => setFilter('rejected')}
         >
-          Rejected
+          Rejected ({approvals.filter(a => a.status === 'rejected').length})
         </button>
       </div>
 
       <div className="approvals-list">
-        {filteredApprovals.map(item => (
-          <div key={item.id} className={`approval-card status-${item.status.toLowerCase()}`}>
-            <div className="approval-header">
-              <span className="approval-type">{item.type}</span>
-              <span className={`approval-status ${item.status.toLowerCase()}`}>
-                {item.status}
-              </span>
-            </div>
-            <div className="approval-body">
-              <h3>{item.subject}</h3>
-              <p>Employee: {item.employee}</p>
-              <p>Amount: €{item.amount.toFixed(2)}</p>
-              <p>Date: {new Date(item.date).toLocaleDateString()}</p>
-            </div>
-            {item.status === 'Pending' && (
-              <div className="approval-actions">
-                <button className="btn-approve" onClick={() => handleApprove(item.id)}>
-                  <FaCheck /> Approve
-                </button>
-                <button className="btn-reject" onClick={() => handleReject(item.id)}>
-                  <FaTimes /> Reject
-                </button>
-                <button className="btn-view">
-                  <FaEye /> View
-                </button>
+        {filteredApprovals.length > 0 ? (
+          filteredApprovals.map(item => (
+            <motion.div 
+              key={`${item.type}-${item.id}`} 
+              className={`approval-card status-${item.status.toLowerCase()}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="approval-header">
+                <span className="approval-type">{item.type}</span>
+                <span className={`approval-status ${item.status.toLowerCase()}`}>
+                  {item.status}
+                </span>
               </div>
-            )}
-            {item.status !== 'Pending' && (
-              <div className="approval-footer">
-                <button className="btn-view">
-                  <FaEye /> View Details
-                </button>
+              <div className="approval-body">
+                <h3>{item.subject}</h3>
+                <p>Employee: {item.employee}</p>
+                <p>Amount: €{item.amount.toFixed(2)}</p>
+                <p>Date: {new Date(item.date).toLocaleDateString()}</p>
               </div>
-            )}
+              {item.status === 'pending' && (
+                <div className="approval-actions">
+                  <button className="btn-approve" onClick={() => handleApprove(item.id, item.type)}>
+                    <FaCheck /> Approve
+                  </button>
+                  <button className="btn-reject" onClick={() => handleReject(item.id, item.type)}>
+                    <FaTimes /> Reject
+                  </button>
+                  <button className="btn-view" onClick={() => navigate(`/${item.type === 'Expense' ? 'expenses' : 'trips'}/${item.id}`)}>
+                    <FaEye /> View
+                  </button>
+                </div>
+              )}
+              {item.status !== 'pending' && (
+                <div className="approval-footer">
+                  <button className="btn-view" onClick={() => navigate(`/${item.type === 'Expense' ? 'expenses' : 'trips'}/${item.id}`)}>
+                    <FaEye /> View Details
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          ))
+        ) : (
+          <div className="empty-state">
+            <p>No approvals found</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

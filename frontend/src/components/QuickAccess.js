@@ -1,10 +1,8 @@
-// frontend/src/components/QuickAccess.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Receipt, FileText, Plane, Zap, ArrowRight } from 'lucide-react';
 
-// ─── Action definitions ────────────────────────────────────────────────────
 const ACTIONS = [
   {
     id:          'new-expense',
@@ -55,10 +53,9 @@ const COLOR_TOKENS = {
   rose:    { bg: 'var(--qa-rose-bg)',    fg: 'var(--qa-rose-fg)',    glow: 'var(--qa-rose-glow)'    },
 };
 
-// ─── Single action tile ────────────────────────────────────────────────────
 function ActionButton({ action, index, onClick }) {
   const [hovered, setHovered] = useState(false);
-  const Icon   = action.icon;
+  const Icon = action.icon;
   const tokens = COLOR_TOKENS[action.color];
 
   return (
@@ -78,21 +75,18 @@ function ActionButton({ action, index, onClick }) {
       whileHover={{ y: -3, scale: 1.025 }}
       whileTap={{ scale: 0.96 }}
     >
-      {/* animated shine sweep */}
       <AnimatePresence>
         {hovered && (
           <motion.span
             className="qa-btn__shine"
             initial={{ x: '-110%', opacity: 0.6 }}
             animate={{ x: '110%',  opacity: 0   }}
-            exit={{}}
             transition={{ duration: 0.42, ease: 'easeInOut' }}
             aria-hidden="true"
           />
         )}
       </AnimatePresence>
 
-      {/* icon bubble */}
       <motion.span
         className="qa-btn__icon"
         animate={hovered
@@ -104,13 +98,11 @@ function ActionButton({ action, index, onClick }) {
         <Icon size={19} strokeWidth={2.4} />
       </motion.span>
 
-      {/* label + description */}
       <span className="qa-btn__body">
         <span className="qa-btn__label">{action.label}</span>
         <span className="qa-btn__desc">{action.description}</span>
       </span>
 
-      {/* shortcut + arrow */}
       <span className="qa-btn__meta" aria-hidden="true">
         <motion.span
           className="qa-btn__arrow"
@@ -125,10 +117,9 @@ function ActionButton({ action, index, onClick }) {
   );
 }
 
-// ─── Main QuickAccess card ─────────────────────────────────────────────────
 function QuickAccess({ onNewExpense, onAddReceipt, onCreateReport, onCreateTrip }) {
   const navigate = useNavigate();
-  const [toast, setToast]   = useState(null);
+  const [toast, setToast] = useState(null);
 
   const handlerMap = {
     'new-expense':   onNewExpense,
@@ -139,12 +130,15 @@ function QuickAccess({ onNewExpense, onAddReceipt, onCreateReport, onCreateTrip 
 
   function handleAction(action) {
     const fn = handlerMap[action.id];
-    fn ? fn() : navigate(action.route);
+    if (fn) {
+      fn();
+    } else {
+      navigate(action.route);
+    }
     setToast(action.label);
     setTimeout(() => setToast(null), 1800);
   }
 
-  // ── Global Alt + letter keyboard shortcuts ──
   useEffect(() => {
     function onKeyDown(e) {
       if (!e.altKey) return;
@@ -164,7 +158,6 @@ function QuickAccess({ onNewExpense, onAddReceipt, onCreateReport, onCreateTrip 
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 260, damping: 26 }}
       >
-        {/* header */}
         <div className="qa-header">
           <span className="qa-header__icon-ring" aria-hidden="true">
             <Zap size={13} strokeWidth={2.8} />
@@ -172,14 +165,13 @@ function QuickAccess({ onNewExpense, onAddReceipt, onCreateReport, onCreateTrip 
           <h3 className="qa-header__title">Quick Access</h3>
           <span className="qa-header__hint">
             <kbd aria-hidden="true">⌥</kbd>
-            <span className="qa-sr-only">Alt key</span>
+            <span className="sr-only">Alt key</span>
             &nbsp;shortcuts enabled
           </span>
         </div>
 
         <div className="qa-divider" aria-hidden="true" />
 
-        {/* grid */}
         <div className="qa-grid" role="list" aria-label="Quick action buttons">
           {ACTIONS.map((action, idx) => (
             <div key={action.id} role="listitem">
@@ -189,12 +181,10 @@ function QuickAccess({ onNewExpense, onAddReceipt, onCreateReport, onCreateTrip 
         </div>
       </motion.section>
 
-      {/* Live region for screen readers */}
-      <div role="status" aria-live="polite" aria-atomic="true" className="qa-sr-only">
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {toast ? `${toast} opened` : ''}
       </div>
 
-      {/* Visual toast */}
       <AnimatePresence>
         {toast && (
           <motion.div

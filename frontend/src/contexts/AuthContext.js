@@ -1,9 +1,8 @@
-// frontend/src/contexts/AuthContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext(null);
-const API_URL = "https://expense-management-system-ye3b.onrender.com/api";
+const API_URL = 'http://localhost:8000/api';
 
 // Create axios instance
 const authAxios = axios.create({
@@ -49,7 +48,6 @@ authAxios.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${access}`;
         return authAxios(originalRequest);
       } catch (refreshError) {
-        // Refresh failed - clear tokens and redirect to login
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         window.location.href = '/login';
@@ -65,7 +63,6 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user from stored token on mount
   useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem('access_token');
@@ -112,7 +109,6 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (userData) => {
     try {
-      // Format the data exactly as the backend expects
       const formattedData = {
         first_name: userData.first_name,
         last_name: userData.last_name,

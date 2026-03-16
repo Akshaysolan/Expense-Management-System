@@ -1,0 +1,57 @@
+[
+  {
+    "model": "api.faq",
+    "pk": 1,
+    "fields": {
+      "question": "How do I submit an expense?",
+      "answer": "To submit an expense, go to the Expenses page and click 'New Expense'. Fill in the details including amount, date, category, and attach a receipt. Then click Submit for approval.",
+      "tag": "Expenses",
+      "order": 1,
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.faq",
+    "pk": 2,
+    "fields": {
+      "question": "How long does approval take?",
+      "answer": "Typically, expense approvals are processed within 2-3 business days. Managers receive notifications when new expenses are submitted for their review.",
+      "tag": "Approvals",
+      "order": 2,
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.faq",
+    "pk": 3,
+    "fields": {
+      "question": "Can I create a report for multiple expenses?",
+      "answer": "Yes! You can generate custom reports from the Reports section. Select the date range, filter by category or department, and choose your preferred format (PDF, Excel, or CSV).",
+      "tag": "Reports",
+      "order": 3,
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.faq",
+    "pk": 4,
+    "fields": {
+      "question": "How do I book a business trip?",
+      "answer": "Go to the Trips section and click 'New Trip'. Enter your destination, dates, purpose, and estimated expenses. Once submitted, your manager will review and approve the trip request.",
+      "tag": "Trips",
+      "order": 4,
+      "is_active": true
+    }
+  },
+  {
+    "model": "api.faq",
+    "pk": 5,
+    "fields": {
+      "question": "How do I reset my password?",
+      "answer": "On the login page, click 'Forgot Password'. Enter your email address and you'll receive instructions to reset your password. Follow the link in the email to create a new password.",
+      "tag": "Account",
+      "order": 5,
+      "is_active": true
+    }
+  }
+]

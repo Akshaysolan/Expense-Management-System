@@ -8,6 +8,8 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 
+import '../styles/ExpensesPage.css';
+
 function ExpensesPage() {
   const navigate = useNavigate();
   const { authAxios, user } = useAuth();

@@ -7,6 +7,7 @@ import {
   RefreshCw, Calendar, Clock,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import '../styles/ReportsPage.css';
 
 const REPORT_CARDS = [
   {

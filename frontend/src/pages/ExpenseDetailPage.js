@@ -8,6 +8,7 @@ import {
   History, Printer, Share2, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import '../styles/ExpensesPage.css';
 
 function ExpenseDetailPage() {
   const { id } = useParams();

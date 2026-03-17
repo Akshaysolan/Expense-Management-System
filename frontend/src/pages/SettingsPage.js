@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaUser, FaBell, FaShieldAlt, FaPalette, FaGlobe, FaSave } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import '../styles/SettingsPage.css';
+
 
 function SettingsPage() {
   const { authAxios, user, updateProfile } = useAuth();

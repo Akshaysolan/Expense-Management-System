@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaCheck, FaTimes, FaEye } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import '../styles/ApprovalsPage.css';
 
 function ApprovalsPage() {
   const navigate = useNavigate();

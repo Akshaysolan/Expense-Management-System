@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlus, FaPlane, FaMapMarkerAlt, FaCalendar, FaUser, FaTimes } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import '../styles/TripsPage.css';
 
 function TripsPage() {
   const navigate = useNavigate();

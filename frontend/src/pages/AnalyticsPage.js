@@ -11,20 +11,19 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
-
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#64748b'];
+import '../styles/AnalyticsPage.css';
 
 function StatCard({ icon: Icon, label, value, change, color, prefix = '' }) {
   const isPositive = change >= 0;
   return (
     <motion.div
       className="an-stat-card"
+      data-color={color}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -3 }}
-      style={{ borderTop: `3px solid ${color}` }}
     >
-      <div className="an-stat-icon" style={{ background: `${color}18`, color }}>
+      <div className="an-stat-icon">
         <Icon size={20} />
       </div>
       <div className="an-stat-body">
@@ -141,7 +140,7 @@ function AnalyticsPage() {
       </div>
 
       <div className="an-charts-grid">
-        <div className="an-chart-card col-8">
+        <div className="an-chart-card an-chart-card--large">
           <div className="an-chart-title">Monthly Expense Trend</div>
           <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={data.monthly_trend} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
@@ -155,18 +154,18 @@ function AnalyticsPage() {
                   <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border, #f3f4f6)" />
+              <CartesianGrid strokeDasharray="3 3" className="an-chart-grid" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Area type="monotone" dataKey="total"    name="Total"    stroke="#3b82f6" strokeWidth={2} fill="url(#gradTotal)" />
+              <Area type="monotone" dataKey="total" name="Total" stroke="#3b82f6" strokeWidth={2} fill="url(#gradTotal)" />
               <Area type="monotone" dataKey="approved" name="Approved" stroke="#10b981" strokeWidth={2} fill="url(#gradApproved)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="an-chart-card col-4">
+        <div className="an-chart-card an-chart-card--small">
           <div className="an-chart-title">By Category</div>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
@@ -179,7 +178,7 @@ function AnalyticsPage() {
                 nameKey="name"
               >
                 {data.by_category.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  <Cell key={i} className={`an-pie-cell an-pie-cell-${i}`} />
                 ))}
               </Pie>
               <Tooltip formatter={(v) => `€${Number(v).toLocaleString()}`} />
@@ -190,36 +189,35 @@ function AnalyticsPage() {
       </div>
 
       <div className="an-charts-grid">
-        <div className="an-chart-card col-6">
+        <div className="an-chart-card an-chart-card--medium">
           <div className="an-chart-title">Department Spending</div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data.by_department} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border, #f3f4f6)" />
+              <CartesianGrid strokeDasharray="3 3" className="an-chart-grid" />
               <XAxis dataKey="department" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="amount" name="Amount" radius={[5, 5, 0, 0]}>
                 {data.by_department.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  <Cell key={i} className={`an-bar-cell an-bar-cell-${i}`} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="an-chart-card col-6">
+        <div className="an-chart-card an-chart-card--medium">
           <div className="an-chart-title">Status Breakdown</div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data.by_status} layout="vertical" margin={{ top: 5, right: 10, left: 40, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border, #f3f4f6)" horizontal={false} />
+              <CartesianGrid strokeDasharray="3 3" className="an-chart-grid" horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 11 }} />
               <YAxis dataKey="status" type="category" tick={{ fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="count" name="Count" radius={[0, 5, 5, 0]}>
-                {data.by_status.map((s, i) => {
-                  const c = s.status === 'Approved' ? '#10b981' : s.status === 'Rejected' ? '#ef4444' : '#f59e0b';
-                  return <Cell key={i} fill={c} />;
-                })}
+                {data.by_status.map((s, i) => (
+                  <Cell key={i} className={`an-status-cell an-status-${s.status.toLowerCase()}`} />
+                ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -227,7 +225,7 @@ function AnalyticsPage() {
       </div>
 
       <div className="an-charts-grid">
-        <div className="an-chart-card col-6">
+        <div className="an-chart-card an-chart-card--medium">
           <div className="an-chart-title">Top Spenders</div>
           <table className="an-top-table">
             <thead>
@@ -251,7 +249,7 @@ function AnalyticsPage() {
           </table>
         </div>
 
-        <div className="an-chart-card col-6">
+        <div className="an-chart-card an-chart-card--medium">
           <div className="an-chart-title">Category Breakdown</div>
           <div className="an-category-list">
             {data.by_category.map((cat, i) => {
@@ -261,17 +259,17 @@ function AnalyticsPage() {
                 <div key={i} className="an-category-item">
                   <div className="an-category-row">
                     <span className="an-category-name">{cat.name}</span>
-                    <span className="an-category-amount" style={{ color: COLORS[i % COLORS.length] }}>
+                    <span className={`an-category-amount an-category-amount-${i}`}>
                       €{Number(cat.amount).toLocaleString()}
                     </span>
                   </div>
                   <div className="an-prog-bar">
                     <motion.div
                       className="an-prog-fill"
+                      data-color-index={i}
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
                       transition={{ duration: 0.7, delay: i * 0.05 }}
-                      style={{ background: COLORS[i % COLORS.length] }}
                     />
                   </div>
                 </div>

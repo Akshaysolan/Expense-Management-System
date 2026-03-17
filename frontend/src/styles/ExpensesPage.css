@@ -1,0 +1,343 @@
+/* frontend/src/pages/ExpensesPage.css */
+.expenses-page {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-subtitle {
+  color: var(--text-faint);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.search-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.search-wrapper {
+  flex: 1;
+  min-width: 300px;
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 40px;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-toggle-btn {
+  padding: 12px 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 40px;
+  font-size: 14px;
+  color: var(--text-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.filter-toggle-btn:hover,
+.filter-toggle-btn.active {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
+}
+
+.status-filter {
+  padding: 12px 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 40px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.advanced-filters {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-group select,
+.filter-group input {
+  padding: 10px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.table-container {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 20px;
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+
+.expenses-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1000px;
+}
+
+.expenses-table th {
+  padding: 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-default);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.expenses-table th:hover {
+  background: var(--bg-elevated);
+}
+
+.sort-icon {
+  margin-left: 6px;
+  color: var(--text-faint);
+}
+
+.sort-icon.active {
+  color: var(--brand-primary);
+}
+
+.expenses-table td {
+  padding: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.subject-cell {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.category-badge {
+  padding: 4px 10px;
+  background: var(--bg-primary);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.amount-cell {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  padding: 8px;
+  background: var(--bg-primary);
+  border: none;
+  border-radius: 8px;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover {
+  background: var(--bg-elevated);
+}
+
+.icon-btn.view:hover {
+  color: #3b82f6;
+}
+
+.icon-btn.edit:hover {
+  color: #f59e0b;
+}
+
+.icon-btn.delete:hover {
+  color: #ef4444;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
+}
+
+.page-info {
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-faint);
+}
+
+.empty-icon {
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.expense-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.file-input {
+  padding: 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  width: 100%;
+}
+
+.file-hint {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 4px;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .expenses-page {
+    padding: 16px;
+  }
+
+  .search-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-wrapper {
+    min-width: auto;
+  }
+
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+  }
+}

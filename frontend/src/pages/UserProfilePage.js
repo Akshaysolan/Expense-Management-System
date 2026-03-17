@@ -22,22 +22,23 @@ function UserProfilePage() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [stats, setStats] = useState({});
 
+  
   useEffect(() => {
-    fetchUserProfile();
-    fetchUserActivity();
-    fetchUserStats();
-  }, [fetchUserProfile, fetchUserActivity, fetchUserStats]);
+  fetchUserProfile();
+  fetchUserActivity();
+  fetchUserStats();
+}, [fetchUserProfile, fetchUserActivity, fetchUserStats]);
 
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
       if (userId === 'me' || parseInt(userId) === currentUser?.id) {
         const { data } = await authAxios.get('/auth/profile/');
-        setProfile(data);
+        setProfile(data); 
         setEditedProfile(data);
       } else {
         const { data } = await authAxios.get(`/employees/${userId}/`);
-        setProfile(data.employee);
+        setProfile(data.employee); 
         setEditedProfile(data.employee);
       }
       setError(null);
@@ -78,7 +79,7 @@ function UserProfilePage() {
   const handleSave = async () => {
     try {
       const { data } = await updateProfile(editedProfile);
-      setProfile(data);
+      setProfile(data); 
       setIsEditing(false);
     } catch (err) {
       console.error('Error updating profile:', err);
@@ -103,10 +104,10 @@ function UserProfilePage() {
 
   const formatDate = (d) => {
     if (!d) return 'N/A';
-    return new Date(d).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(d).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
     });
   };
 
@@ -128,23 +129,23 @@ function UserProfilePage() {
   );
 
   const isOwnProfile = currentUser?.id === profile.id || userId === 'me';
-  const fullName = profile.user ?
-    `${profile.user.first_name || ''} ${profile.user.last_name || ''}`.trim() :
+  const fullName = profile.user ? 
+    `${profile.user.first_name || ''} ${profile.user.last_name || ''}`.trim() : 
     profile.full_name || 'User';
-
-  const initials = fullName !== 'User' ?
-    fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) :
+  
+  const initials = fullName !== 'User' ? 
+    fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 
     'U';
 
   const fadeUp = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.45 } }
+    show:   { opacity: 1, y: 0, transition: { duration: 0.45 } }
   };
 
-  const iconMap = {
-    expense: DollarSign,
-    trip: Calendar,
-    approval: CheckCircle
+  const iconMap = { 
+    expense: DollarSign, 
+    trip: Calendar, 
+    approval: CheckCircle 
   };
 
   return (
@@ -198,10 +199,10 @@ function UserProfilePage() {
         </div>
       </motion.div>
 
-      <motion.div
-        className="profile-body"
-        initial="hidden"
-        animate="show"
+      <motion.div 
+        className="profile-body" 
+        initial="hidden" 
+        animate="show" 
         variants={{ show: { transition: { staggerChildren: 0.08 } } }}
       >
         <div className="profile-left-col">
@@ -212,71 +213,71 @@ function UserProfilePage() {
 
             <AnimatePresence mode="wait">
               {isEditing ? (
-                <motion.div
-                  key="edit"
-                  className="edit-form"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                <motion.div 
+                  key="edit" 
+                  className="edit-form" 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
                   exit={{ opacity: 0 }}
                 >
                   <div className="form-row">
                     <div className="form-group">
                       <label>First Name</label>
-                      <input
-                        name="first_name"
-                        value={editedProfile.user?.first_name || ''}
-                        onChange={handleChange}
+                      <input 
+                        name="first_name" 
+                        value={editedProfile.user?.first_name || ''} 
+                        onChange={handleChange} 
                       />
                     </div>
                     <div className="form-group">
                       <label>Last Name</label>
-                      <input
-                        name="last_name"
-                        value={editedProfile.user?.last_name || ''}
-                        onChange={handleChange}
+                      <input 
+                        name="last_name" 
+                        value={editedProfile.user?.last_name || ''} 
+                        onChange={handleChange} 
                       />
                     </div>
                   </div>
                   <div className="form-group">
                     <label>Email</label>
-                    <input
-                      name="email"
-                      type="email"
-                      value={editedProfile.user?.email || ''}
-                      onChange={handleChange}
+                    <input 
+                      name="email" 
+                      type="email" 
+                      value={editedProfile.user?.email || ''} 
+                      onChange={handleChange} 
                     />
                   </div>
                   <div className="form-group">
                     <label>Phone</label>
-                    <input
-                      name="phone"
-                      type="tel"
-                      value={editedProfile.phone || ''}
-                      onChange={handleChange}
+                    <input 
+                      name="phone" 
+                      type="tel" 
+                      value={editedProfile.phone || ''} 
+                      onChange={handleChange} 
                     />
                   </div>
                   <div className="form-group">
                     <label>Position</label>
-                    <input
-                      name="position"
-                      value={editedProfile.position || ''}
-                      onChange={handleChange}
+                    <input 
+                      name="position" 
+                      value={editedProfile.position || ''} 
+                      onChange={handleChange} 
                     />
                   </div>
                   <div className="form-group">
                     <label>Department</label>
-                    <input
-                      name="department"
-                      value={editedProfile.department || ''}
-                      onChange={handleChange}
+                    <input 
+                      name="department" 
+                      value={editedProfile.department || ''} 
+                      onChange={handleChange} 
                     />
                   </div>
                   <div className="form-actions">
-                    <button
-                      className="btn-secondary"
-                      onClick={() => {
-                        setEditedProfile(profile);
-                        setIsEditing(false);
+                    <button 
+                      className="btn-secondary" 
+                      onClick={() => { 
+                        setEditedProfile(profile); 
+                        setIsEditing(false); 
                       }}
                     >
                       <X size={14} /> Cancel
@@ -287,20 +288,20 @@ function UserProfilePage() {
                   </div>
                 </motion.div>
               ) : (
-                <motion.div
-                  key="view"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                <motion.div 
+                  key="view" 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
                   exit={{ opacity: 0 }}
                 >
                   <div className="detail-grid">
                     {[
-                      { icon: Mail, label: 'Email', value: profile.user?.email },
-                      { icon: Phone, label: 'Phone', value: profile.phone || 'Not provided' },
-                      { icon: Building2, label: 'Department', value: profile.department || 'Not set' },
-                      { icon: Briefcase, label: 'Position', value: profile.position || 'Not set' },
-                      { icon: Calendar, label: 'Member Since', value: profile.hire_date ? formatDate(profile.hire_date) : 'N/A' },
-                      { icon: MapPin, label: 'Location', value: profile.location || 'Head Office' },
+                      { icon: Mail,      label: 'Email',        value: profile.user?.email },
+                      { icon: Phone,     label: 'Phone',        value: profile.phone || 'Not provided' },
+                      { icon: Building2, label: 'Department',   value: profile.department || 'Not set' },
+                      { icon: Briefcase, label: 'Position',     value: profile.position || 'Not set' },
+                      { icon: Calendar,  label: 'Member Since', value: profile.hire_date ? formatDate(profile.hire_date) : 'N/A' },
+                      { icon: MapPin,    label: 'Location',     value: profile.location || 'Head Office' },
                     ].map(({ icon: Icon, label, value }) => (
                       <div className="detail-item" key={label}>
                         <div className="detail-icon-wrap"><Icon size={15} /></div>
@@ -326,11 +327,11 @@ function UserProfilePage() {
                 recentActivity.map((item, i) => {
                   const Icon = iconMap[item.type] || Clock;
                   return (
-                    <motion.div
-                      key={item.id || i}
-                      className="activity-item"
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
+                    <motion.div 
+                      key={item.id || i} 
+                      className="activity-item" 
+                      initial={{ opacity: 0, x: -12 }} 
+                      animate={{ opacity: 1, x: 0 }} 
                       transition={{ delay: 0.3 + i * 0.08 }}
                     >
                       <div className={`activity-icon ${item.type}`}>
@@ -362,10 +363,10 @@ function UserProfilePage() {
             </div>
             <div className="card-body">
               {[
-                { label: 'Trips this year', value: stats.trips_this_year || 0 },
+                { label: 'Trips this year',    value: stats.trips_this_year || 0 },
                 { label: 'Expenses submitted', value: stats.expenses_submitted || 0 },
-                { label: 'Pending approvals', value: stats.pending_approvals || 0 },
-                { label: 'Total reimbursed', value: stats.total_reimbursed ? `€${stats.total_reimbursed}` : '€0' },
+                { label: 'Pending approvals',  value: stats.pending_approvals || 0 },
+                { label: 'Total reimbursed',   value: stats.total_reimbursed ? `€${stats.total_reimbursed}` : '€0' },
               ].map(({ label, value }) => (
                 <div className="stat-row" key={label}>
                   <span className="stat-label">{label}</span>
@@ -382,9 +383,9 @@ function UserProfilePage() {
             <div className="card-body">
               {[
                 { label: 'Account status', value: profile.is_active ? 'Active' : 'Inactive' },
-                { label: 'Role', value: profile.role || 'employee' },
-                { label: 'Last login', value: profile.last_login ? formatDate(profile.last_login) : 'N/A' },
-                { label: 'Employee ID', value: profile.employee_id || 'N/A' },
+                { label: 'Role',           value: profile.role || 'employee' },
+                { label: 'Last login',     value: profile.last_login ? formatDate(profile.last_login) : 'N/A' },
+                { label: 'Employee ID',    value: profile.employee_id || 'N/A' },
               ].map(({ label, value }) => (
                 <div className="stat-row" key={label}>
                   <span className="stat-label">{label}</span>
